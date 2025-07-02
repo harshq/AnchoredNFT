@@ -103,7 +103,7 @@ contract PlanetNFT is ERC721 {
      */
     function generateSVGForTokenId(uint256 tokenId) public view returns (string memory) {
         Colors memory colors = s_tokenIdToColors[tokenId];
-        uint256 rotation = Strings.parseUint(colors.base) % 30;
+        uint256 rotation = Strings.parseUint(colors.base) % 35;
         string memory rotationStr = Strings.toString(rotation);
 
         string memory part1 =
