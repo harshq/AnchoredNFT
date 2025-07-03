@@ -7,7 +7,7 @@ import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
- * @title PlanetNFTv1
+ * @title PlanetNFT v1
  * @author Harshana Abeyaratne
  *
  * A procedurally generated planet with random colors and rotation.
