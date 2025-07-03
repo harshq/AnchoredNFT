@@ -14,8 +14,8 @@ contract MintAndList is Script, ERC721Holder {
     function run() external {
         vm.startBroadcast();
         uint256 tokenId = PlanetNFT(nftAddress).terraform();
-        uint256 tokenId2 = PlanetNFT(nftAddress).terraform();
-        uint256 tokenId3 = PlanetNFT(nftAddress).terraform();
+        // uint256 tokenId2 = PlanetNFT(nftAddress).terraform();
+        // uint256 tokenId3 = PlanetNFT(nftAddress).terraform();
         PlanetNFT(nftAddress).approve(marketplaceAddress, tokenId);
 
         NFTMarketplace(marketplaceAddress).listItem(nftAddress, tokenId, 1e6);
