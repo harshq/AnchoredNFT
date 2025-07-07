@@ -5,6 +5,8 @@ import {console2} from "forge-std/console2.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {VRFConsumerBaseV2Plus} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 /**
  * @title PlanetNFT v1
@@ -16,10 +18,15 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
  * refactored to use Chainlink VRR.
  *
  */
-contract PlanetNFT is ERC721 {
+contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
+    error PlanetNFT__InvalidVrfRequest(uint256 requestId);
+
+    event PlanetRequested(uint256 indexed requestId, address indexed minter);
+    event PlanetMinted(uint256 indexed requestId, address indexed minter, uint256 indexed tokenId);
     ////////////////////////////
     ///       TYPE DEC       ///
     ////////////////////////////
+
     struct Colors {
         string base;
         string ring;
@@ -28,33 +35,45 @@ contract PlanetNFT is ERC721 {
     ////////////////////////////
     ///        STATE         ///
     ////////////////////////////
+    uint32 private constant VRF_RANDOM_WORDS_COUNT = 2;
+    uint16 private constant VRF_REQ_CONFIRMATIONS = 3;
+
+    uint256 private immutable i_vrfCoordinatorSubId;
+    bytes32 private immutable i_vrfKeyHash;
+    uint32 private immutable i_vrfGasLimit;
     uint256 private s_counter;
+
     mapping(uint256 => Colors) private s_tokenIdToColors;
+    mapping(uint256 requestId => address sender) s_vrfRequestIdToSender;
 
     ////////////////////////////
     ///     CONSTRUCTOR      ///
     ////////////////////////////
-    constructor() ERC721("PlanetNFT", "PNFT") {}
+    constructor(address vrfCoordinator, uint256 vrfCoordinatorSubId, bytes32 vrfKeyHash, uint32 vrfGasLimit)
+        ERC721("PlanetNFT", "PNFT")
+        VRFConsumerBaseV2Plus(vrfCoordinator)
+    {
+        i_vrfCoordinatorSubId = vrfCoordinatorSubId;
+        i_vrfKeyHash = vrfKeyHash;
+        i_vrfGasLimit = vrfGasLimit;
+    }
 
     /////////////////////////////////
     ///    EXTERNAL FUNCTIONS     ///
     /////////////////////////////////
 
     /**
-     * creates a new PlanetNFT
+     * Starts terraforming a new PlanetNFT. Initiated a VRF request
+     * and emits a event with requestId and creator.
      *
-     * @return uint256 token id for the newly
-     * generated NFT.
+     * @return requestId VRF request id
      */
-    function terraform() external returns (uint256) {
-        uint256 tokenId = s_counter;
-        s_counter++;
+    function terraform() external returns (uint256 requestId) {
+        uint256 vrfRequestId = requestRandomWords();
+        s_vrfRequestIdToSender[vrfRequestId] = msg.sender;
 
-        Colors memory colors = Colors({base: getRandomNumber(tokenId), ring: getRandomNumber(tokenId + 1)});
-        s_tokenIdToColors[tokenId] = colors;
-
-        _safeMint(msg.sender, tokenId);
-        return tokenId;
+        emit PlanetRequested(vrfRequestId, msg.sender);
+        return vrfRequestId;
     }
 
     /////////////////////////////////
@@ -65,8 +84,9 @@ contract PlanetNFT is ERC721 {
      * Returns a Base64 encoded token URI for the token id.
      *
      * @param tokenId token id of NFT
+     * @return metadata metadata for NFT
      */
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override returns (string memory metadata) {
         _requireOwned(tokenId);
 
         string memory svg = generateSVGForTokenId(tokenId);
@@ -100,8 +120,9 @@ contract PlanetNFT is ERC721 {
      * initialised at the creation of NFT
      *
      * @param tokenId token id of the NFT
+     * @return svg generated svg
      */
-    function generateSVGForTokenId(uint256 tokenId) public view returns (string memory) {
+    function generateSVGForTokenId(uint256 tokenId) public view returns (string memory svg) {
         Colors memory colors = s_tokenIdToColors[tokenId];
         uint256 rotation = Strings.parseUint(colors.base) % 35;
         string memory rotationStr = Strings.toString(rotation);
@@ -134,7 +155,9 @@ contract PlanetNFT is ERC721 {
         );
 
         string memory part3 = string.concat(
-            ']]></style></defs><g id="Layer_x0020_1" transform="rotate(', rotationStr, ' 3.41333 3.41333)">'
+            ']]></style><radialGradient id="bgGradient" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="#0e204a" /><stop offset="100%" stop-color="#000010" /></radialGradient><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="0.02" flood-color="white" flood-opacity="0.8" /><feDropShadow dx="0" dy="0" stdDeviation="0.1" flood-color="white" flood-opacity="0.4" /></filter><filter id="glow-planet" x="-10%" y="-10%" width="200%" height="200%"><feDropShadow dx="0" dy="0" stdDeviation="0.1" flood-color="#ffffff" flood-opacity="0.3" /></filter></defs><g id="Layer_x0020_1" transform="rotate(',
+            rotationStr,
+            ' 3.41333 3.41333)">'
         );
 
         string memory part4 =
@@ -146,23 +169,6 @@ contract PlanetNFT is ERC721 {
     /////////////////////////////////
     ///    INTERNAL FUNCTIONS     ///
     /////////////////////////////////
-
-    /**
-     * Generates a random number based on token id, sender address,
-     * block number and timestamp.
-     *
-     * @notice we use hsl colors for the SVG. Since we use the
-     * random number generated from this function as a color, number
-     * is kept under 360.
-     * @notice NOT SECURE RANDOMNESS! REPLACE WITH CHAINLINK VRF
-     *
-     * @param tokenId token id of the NFT
-     */
-    function getRandomNumber(uint256 tokenId) internal view returns (string memory) {
-        bytes32 rand = keccak256(abi.encodePacked(msg.sender, tokenId, block.number, block.timestamp));
-        uint256 randomNumberCapped = uint256(rand) % 360;
-        return Strings.toString(randomNumberCapped);
-    }
 
     /**
      * Converts the SVG to a Base64 encoded string.
@@ -181,5 +187,51 @@ contract PlanetNFT is ERC721 {
      */
     function _baseURI() internal pure override returns (string memory) {
         return "data:application/json;base64,";
+    }
+
+    /**
+     * Chainlink VRF fulfillRandomWords
+     *
+     * @param requestId request id of the fulfilled request
+     * @param randomWords random words
+     */
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+        address sender = s_vrfRequestIdToSender[requestId];
+        if (sender == address(0)) {
+            revert PlanetNFT__InvalidVrfRequest(requestId);
+        }
+
+        delete s_vrfRequestIdToSender[requestId];
+
+        uint256 tokenId = s_counter;
+        s_counter++;
+
+        s_tokenIdToColors[tokenId] =
+            Colors({base: Strings.toString(randomWords[0] % 360), ring: Strings.toString(randomWords[1] % 360)});
+
+        _safeMint(sender, tokenId);
+        emit PlanetMinted(requestId, sender, tokenId);
+    }
+
+    /////////////////////////////////
+    ///     PRIVATE FUNCTIONS     ///
+    /////////////////////////////////
+
+    /**
+     * Requests 2 random numbers from Chainlink VRF
+     *
+     * @return requestId VRF request id
+     */
+    function requestRandomWords() private returns (uint256 requestId) {
+        requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_vrfKeyHash,
+                subId: i_vrfCoordinatorSubId,
+                requestConfirmations: VRF_REQ_CONFIRMATIONS,
+                callbackGasLimit: i_vrfGasLimit,
+                numWords: VRF_RANDOM_WORDS_COUNT,
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+            })
+        );
     }
 }

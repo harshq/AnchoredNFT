@@ -31,9 +31,9 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
     ///        EVENTS        ///
     ////////////////////////////
 
-    event ItemListed(address tokenAddress, uint256 tokenId);
-    event ItemDelisted(address tokenAddress, uint256 tokenId);
-    event ItemSold(address tokenAddress, uint256 tokenId, address buyer);
+    event ItemListed(address indexed tokenAddress, uint256 indexed tokenId);
+    event ItemDelisted(address indexed tokenAddress, uint256 indexed tokenId);
+    event ItemSold(address indexed tokenAddress, uint256 indexed tokenId, address indexed buyer);
 
     ////////////////////////////
     ///        ERRORS        ///
@@ -197,7 +197,6 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
         IERC721 nft = IERC721(nftAddress);
         Listing memory listing = s_listing[nftAddress][tokenId];
 
-        emit ItemSold(nftAddress, tokenId, msg.sender);
         delete s_listing[nftAddress][tokenId];
 
         uint256 fee = listing.price * COMMISSION_BASIS_POINTS / 10_000;
@@ -208,6 +207,8 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
         i_paymentToken.safeTransferFrom(msg.sender, address(this), listing.price);
         nft.safeTransferFrom(listing.seller, msg.sender, tokenId);
         i_paymentToken.safeTransfer(listing.seller, sellerAmount);
+
+        emit ItemSold(nftAddress, tokenId, msg.sender);
     }
 
     /**
