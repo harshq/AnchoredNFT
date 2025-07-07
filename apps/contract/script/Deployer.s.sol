@@ -20,13 +20,16 @@ contract Deployer is Script, CodeConstants {
         PlanetNFT planetNFT;
         NFTMarketplace marketplace;
 
+        // create and fund the VRF subscription
         if (config.vrfCoordinatorSubId == 0) {
             config.vrfCoordinatorSubId = vrfInteractions.createSubscription(config);
             vrfInteractions.fundSubscription(config);
         }
 
         vm.startBroadcast(config.account);
+        // deploy engine
         engine = new NFTEngine();
+        // deploy NFT contract
         planetNFT = new PlanetNFT(
             address(engine),
             address(config.vrfCoordinator),
@@ -34,12 +37,17 @@ contract Deployer is Script, CodeConstants {
             config.vrfKeyHash,
             config.vrfGasLimit
         );
+        // transfer engine ownership to NFT contract
+        engine.transferOwnership(address(planetNFT));
+
+        // deploy marketplace with accepted token
         marketplace = new NFTMarketplace(config.paymentToken);
         vm.stopBroadcast();
 
         console.log("PlanetNFT is at", address(planetNFT));
         console.log("NFTMarketplace is at", address(marketplace));
 
+        // add consumer for VRF
         vrfInteractions.addConsumer(config, address(planetNFT));
         return (planetNFT, marketplace);
     }

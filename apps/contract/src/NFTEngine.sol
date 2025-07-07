@@ -2,10 +2,13 @@
 pragma solidity 0.8.29;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IEngine, Meta} from "src/IEngine.sol";
 
-contract NFTEngine {
-    function generateWithMeta(Meta memory meta, uint256 tokenId) external pure returns (string memory) {
+contract NFTEngine is Ownable {
+    constructor() Ownable(msg.sender) {}
+
+    function generateWithMeta(Meta memory meta, uint256 tokenId) external view onlyOwner returns (string memory) {
         uint256 rotation = Strings.parseUint(meta.base) % 35;
         string memory rotationStr = Strings.toString(rotation);
 
