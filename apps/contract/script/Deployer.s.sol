@@ -9,12 +9,14 @@ import {HelperConfig, Config, CodeConstants} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
+import {NFTEngine} from "src/NFTEngine.sol";
 
 contract Deployer is Script, CodeConstants {
     function run() public returns (PlanetNFT, NFTMarketplace) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
         VRFInteractions vrfInteractions = new VRFInteractions();
+        NFTEngine engine;
         PlanetNFT planetNFT;
         NFTMarketplace marketplace;
 
@@ -24,8 +26,13 @@ contract Deployer is Script, CodeConstants {
         }
 
         vm.startBroadcast(config.account);
+        engine = new NFTEngine();
         planetNFT = new PlanetNFT(
-            address(config.vrfCoordinator), config.vrfCoordinatorSubId, config.vrfKeyHash, config.vrfGasLimit
+            address(engine),
+            address(config.vrfCoordinator),
+            config.vrfCoordinatorSubId,
+            config.vrfKeyHash,
+            config.vrfGasLimit
         );
         marketplace = new NFTMarketplace(config.paymentToken);
         vm.stopBroadcast();
@@ -34,7 +41,6 @@ contract Deployer is Script, CodeConstants {
         console.log("NFTMarketplace is at", address(marketplace));
 
         vrfInteractions.addConsumer(config, address(planetNFT));
-
         return (planetNFT, marketplace);
     }
 }
