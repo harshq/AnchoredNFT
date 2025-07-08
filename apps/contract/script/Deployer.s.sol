@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
+import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 import {HelperConfig, Config, CodeConstants} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
@@ -27,15 +28,17 @@ contract Deployer is Script, CodeConstants {
         }
 
         vm.startBroadcast(config.account);
+
         // deploy engine
-        engine = new NFTEngine();
+        engine = new NFTEngine(config.pricefeedPairs, config.pricefeedAddresses);
         // deploy NFT contract
         planetNFT = new PlanetNFT(
             address(engine),
             address(config.vrfCoordinator),
             config.vrfCoordinatorSubId,
             config.vrfKeyHash,
-            config.vrfGasLimit
+            config.vrfGasLimit,
+            config.pricefeedPairs
         );
         // transfer engine ownership to NFT contract
         engine.transferOwnership(address(planetNFT));

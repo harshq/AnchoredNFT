@@ -1,14 +1,96 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
+import {console} from "forge-std/console.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AggregatorV3Interface} from
+    "chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IEngine, Meta} from "src/IEngine.sol";
+import {FixedPointString} from "src/FixedPointString.sol";
 
 contract NFTEngine is Ownable {
-    constructor() Ownable(msg.sender) {}
+    using FixedPointString for int256;
+
+    error NFTEngine__PricefeedPairsHaveDifferentLengths();
+    error NFTEngine__UnsupportedPricefeedPair();
+
+    mapping(string => AggregatorV3Interface) internal s_pricefeeds;
+
+    constructor(string[] memory pricefeedPairs, address[] memory pricefeedAddresses) Ownable(msg.sender) {
+        if (pricefeedPairs.length != pricefeedAddresses.length) {
+            revert NFTEngine__PricefeedPairsHaveDifferentLengths();
+        }
+
+        for (uint256 i = 0; i < pricefeedPairs.length; i++) {
+            s_pricefeeds[pricefeedPairs[i]] = AggregatorV3Interface(pricefeedAddresses[i]);
+        }
+    }
+
+    function _get24hPriceRelativeChange(string memory pricefeedPair) private view returns (int256 relativeChange) {
+        if (address(s_pricefeeds[pricefeedPair]) == address(0)) {
+            revert NFTEngine__UnsupportedPricefeedPair();
+        }
+
+        (uint80 latestRoundId, int256 latestPrice,, uint256 latestTimestamp,) =
+            s_pricefeeds[pricefeedPair].latestRoundData();
+
+        // get 1 day old data from latestTimestamp
+        uint80 roundId = latestRoundId;
+        uint256 targetTimestamp = latestTimestamp - 1 days;
+        int256 oldPrice = latestPrice;
+
+        while (true) {
+            if (roundId == 0) break;
+
+            roundId -= 1;
+
+            (, int256 price,, uint256 timestamp,) = s_pricefeeds[pricefeedPair].getRoundData(roundId);
+            if (timestamp <= targetTimestamp) {
+                oldPrice = price;
+                break;
+            }
+        }
+
+        // get the precentage
+        int256 diff = latestPrice - oldPrice;
+        relativeChange = (diff * 1e8) / (oldPrice); // scaled by 1e8
+    }
+
+    // 25000000 = 25 * 1e6
+    function _getStarsCount(int256 relativeChange) private pure returns (uint256) {
+        // relativeChange is scaled by 1e8
+        int256 absChange = relativeChange >= 0 ? relativeChange : -relativeChange;
+
+        // Clamp upper bound 30% scaled by 1e8
+        int256 maxChange = 30 * 1e6;
+        if (absChange > maxChange) {
+            absChange = maxChange;
+        }
+
+        // Clamp lower bound 0.01% scaled by 1e8
+        int256 minChange = 1e3;
+        if (absChange < minChange) {
+            absChange = minChange;
+        }
+
+        // Map from minChange..maxChange => 5..100 stars
+        // scaled range = 95 (100 - 5)
+        uint256 scaled = uint256(absChange - minChange) * 95 / uint256(maxChange - minChange);
+
+        return 5 + scaled;
+    }
+
+    function _generateStars() private returns (string memory) {}
 
     function generateWithMeta(Meta memory meta, uint256 tokenId) external view onlyOwner returns (string memory) {
+        string memory pricefeedPair = meta.linkedPair;
+        int256 priceRelativeChange = _get24hPriceRelativeChange(pricefeedPair);
+        uint256 starCount = _getStarsCount(priceRelativeChange);
+
+        console.log("CHANGE: ", priceRelativeChange);
+        console.log("STARS: ", starCount);
+
         uint256 rotation = Strings.parseUint(meta.base) % 35;
         string memory rotationStr = Strings.toString(rotation);
 
@@ -56,7 +138,9 @@ contract NFTEngine is Ownable {
         string memory part5 = string.concat(
             Strings.toString(tokenId),
             " is synced to ",
-            "ETH/USD",
+            pricefeedPair,
+            " and its ",
+            // linkedPairPriceChange.toFixedStringSigned(4, 2),
             '</text><rect class="fil7" width="6.82666" height="6.82666"/></svg>'
         );
 

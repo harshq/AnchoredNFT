@@ -6,6 +6,7 @@ import {MockUSDT} from "test/mock/MockUSDT.t.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
+import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 
 struct Config {
     address account;
@@ -15,6 +16,8 @@ struct Config {
     uint256 vrfCoordinatorSubId;
     bytes32 vrfKeyHash;
     uint32 vrfGasLimit;
+    string[] pricefeedPairs;
+    address[] pricefeedAddresses;
 }
 
 contract CodeConstants {
@@ -63,6 +66,30 @@ contract HelperConfig is Script, CodeConstants {
 
         vm.startBroadcast();
 
+        // mock btc aggregator
+        MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 100e8);
+        btcMockAggregator.updateRoundData(11, 80e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
+        btcMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
+
+        // mock eth aggregator
+        MockV3Aggregator ethMockAggregator = new MockV3Aggregator(8, 10883300000000);
+        ethMockAggregator.updateRoundData(11, 80e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
+        ethMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
+
+        vm.stopBroadcast();
+
+        // mocked pricefeed pairs
+        string[] memory pricefeedPairs = new string[](2);
+        pricefeedPairs[0] = "BTC/USD";
+        pricefeedPairs[1] = "ETH/USD";
+
+        // mocked aggregator pairs
+        address[] memory pricefeedAddresses = new address[](2);
+        pricefeedAddresses[0] = address(btcMockAggregator);
+        pricefeedAddresses[1] = address(ethMockAggregator);
+
+        vm.startBroadcast();
+
         linkToken = new MockLinkToken();
 
         vrfCoordinator =
@@ -85,7 +112,9 @@ contract HelperConfig is Script, CodeConstants {
             vrfCoordinatorSubId: 0, // to be updated in VRFInteractions
             // VRF mock related: Random are fine for local
             vrfKeyHash: 0x111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000,
-            vrfGasLimit: 500_000
+            vrfGasLimit: 500_000,
+            pricefeedPairs: pricefeedPairs,
+            pricefeedAddresses: pricefeedAddresses
         });
 
         return s_anvilChainConfig;

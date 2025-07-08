@@ -21,6 +21,7 @@ import {VRFV2PlusClient} from "chainlink-brownie-contracts/contracts/src/v0.8/vr
  */
 contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     error PlanetNFT__InvalidVrfRequest(uint256 requestId);
+    error PlanetNFT__NeedAtleastOnePricefeedPair();
 
     event PlanetRequested(uint256 indexed requestId, address indexed minter);
     event PlanetMinted(uint256 indexed requestId, address indexed minter, uint256 indexed tokenId);
@@ -36,6 +37,7 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     uint32 private immutable i_vrfGasLimit;
     address private immutable i_nftEngine;
     uint256 private s_counter;
+    string[] private s_pricefeedPairs;
 
     mapping(uint256 => Meta) private s_tokenIdToMeta;
     mapping(uint256 requestId => address sender) s_vrfRequestIdToSender;
@@ -48,12 +50,17 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         address vrfCoordinator,
         uint256 vrfCoordinatorSubId,
         bytes32 vrfKeyHash,
-        uint32 vrfGasLimit
+        uint32 vrfGasLimit,
+        string[] memory pricefeedPairs
     ) ERC721("PlanetNFT", "PNFT") VRFConsumerBaseV2Plus(vrfCoordinator) {
+        if (pricefeedPairs.length == 0) {
+            revert PlanetNFT__NeedAtleastOnePricefeedPair();
+        }
         i_vrfCoordinatorSubId = vrfCoordinatorSubId;
         i_vrfKeyHash = vrfKeyHash;
         i_vrfGasLimit = vrfGasLimit;
         i_nftEngine = nftEngine;
+        s_pricefeedPairs = pricefeedPairs;
     }
 
     /////////////////////////////////
@@ -165,8 +172,11 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         uint256 tokenId = s_counter;
         s_counter++;
 
-        s_tokenIdToMeta[tokenId] =
-            Meta({base: Strings.toString(randomWords[0] % 360), ring: Strings.toString(randomWords[1] % 360)});
+        s_tokenIdToMeta[tokenId] = Meta({
+            base: Strings.toString(randomWords[0] % 360),
+            ring: Strings.toString(randomWords[1] % 360),
+            linkedPair: s_pricefeedPairs[0]
+        });
 
         _safeMint(sender, tokenId);
         emit PlanetMinted(requestId, sender, tokenId);

@@ -4,6 +4,7 @@ pragma solidity 0.8.29;
 struct Meta {
     string base;
     string ring;
+    string linkedPair;
 }
 
 interface IEngine {
