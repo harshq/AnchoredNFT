@@ -68,12 +68,12 @@ contract HelperConfig is Script, CodeConstants {
 
         // mock btc aggregator
         MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 100e8);
-        btcMockAggregator.updateRoundData(11, 80e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
-        btcMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
+        btcMockAggregator.updateRoundData(11, 10e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
+        btcMockAggregator.updateRoundData(12, 9.8e8, block.timestamp, block.timestamp);
 
-        // mock eth aggregator
+        // // mock eth aggregator
         MockV3Aggregator ethMockAggregator = new MockV3Aggregator(8, 10883300000000);
-        ethMockAggregator.updateRoundData(11, 80e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
+        ethMockAggregator.updateRoundData(11, 100e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
         ethMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
 
         vm.stopBroadcast();

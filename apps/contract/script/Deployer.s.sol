@@ -13,7 +13,7 @@ import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {NFTEngine} from "src/NFTEngine.sol";
 
 contract Deployer is Script, CodeConstants {
-    function run() public returns (PlanetNFT, NFTMarketplace) {
+    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
         VRFInteractions vrfInteractions = new VRFInteractions();
@@ -41,7 +41,7 @@ contract Deployer is Script, CodeConstants {
             config.pricefeedPairs
         );
         // transfer engine ownership to NFT contract
-        engine.transferOwnership(address(planetNFT));
+        // engine.transferOwnership(address(planetNFT));
 
         // deploy marketplace with accepted token
         marketplace = new NFTMarketplace(config.paymentToken);
@@ -52,6 +52,6 @@ contract Deployer is Script, CodeConstants {
 
         // add consumer for VRF
         vrfInteractions.addConsumer(config, address(planetNFT));
-        return (planetNFT, marketplace);
+        return (planetNFT, engine, marketplace);
     }
 }

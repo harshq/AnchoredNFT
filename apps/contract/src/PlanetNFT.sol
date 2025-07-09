@@ -172,11 +172,7 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         uint256 tokenId = s_counter;
         s_counter++;
 
-        s_tokenIdToMeta[tokenId] = Meta({
-            base: Strings.toString(randomWords[0] % 360),
-            ring: Strings.toString(randomWords[1] % 360),
-            linkedPair: s_pricefeedPairs[0]
-        });
+        s_tokenIdToMeta[tokenId] = Meta({base: Strings.toString(randomWords[0] % 360), linkedPair: s_pricefeedPairs[0]});
 
         _safeMint(sender, tokenId);
         emit PlanetMinted(requestId, sender, tokenId);
