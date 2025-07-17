@@ -28,7 +28,7 @@ contract NFTEngine {
     }
 
     function getBackgroundColor(uint256 index) public pure returns (string memory) {
-        string[3] memory colors = ["#0e204a", "#032e2b", "#2c2e03"];
+        string[3] memory colors = ["#0e204a", "#043431", "#2e2b03"];
 
         return colors[index];
     }

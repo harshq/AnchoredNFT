@@ -219,4 +219,16 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
         s_commission = 0;
         i_paymentToken.safeTransfer(payable(owner()), commission);
     }
+
+    function getListing(address nftAddress, uint256 tokenId) external view returns (Listing memory) {
+        return s_listing[nftAddress][tokenId];
+    }
+
+    function getPaymentToken() external view returns (address) {
+        return address(i_paymentToken);
+    }
+
+    function getProceeds(address user) external view returns (uint256) {
+        return s_proceeds[user];
+    }
 }
