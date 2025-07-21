@@ -20,7 +20,11 @@ const listNftDialog = () => {
                     Sell NFT
                 </Button>
             </DialogTrigger>
-            <DialogContent onInteractOutside={e => e.preventDefault()}>
+            <DialogContent
+                showCloseButton={false}
+                onInteractOutside={e => e.preventDefault()}
+                onEscapeKeyDown={e => e.preventDefault()}
+                onOpenAutoFocus={e => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>List NFT for Sale</DialogTitle>
                     <DialogDescription>

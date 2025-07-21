@@ -102,10 +102,13 @@ const ListNftForm = () => {
                     )}
                 />
 
-                <div className="text-sm text-muted-foreground mt-2 flex flex-col gap-1">
-                    <div>Marketplace fee (1%): {formatNumberWithCommas(formatUnits(fee, 6))} USDT</div>
-                    <div>Net proceeds: {formatNumberWithCommas(formatUnits(net, 6))} USDT</div>
-                </div>
+                {
+                    priceRaw && (<div className="text-sm text-muted-foreground mt-2 flex flex-col gap-1">
+                        <div>Marketplace fee (1%): {formatNumberWithCommas(formatUnits(fee, 6))} USDT</div>
+                        <div>Net proceeds: {formatNumberWithCommas(formatUnits(net, 6))} USDT</div>
+                    </div>)
+                }
+
                 <div className="flex gap-2 w-full justify-end">
                     <DialogClose asChild><Button className='px-10' type="button" variant="outline">Cancel</Button></DialogClose>
                     <Button className='px-10' type='submit'>List NFT</Button>
