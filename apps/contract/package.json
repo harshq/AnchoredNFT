@@ -4,6 +4,6 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "anvil --block-time 10 --gas-limit 30000000"
+    "dev": "anvil --block-time 2 --print-traces"
   }
 }
