@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { contractsToExtract } from "./config.ts";
 
 console.log("🔍 ABI extraction starting...");
 
@@ -41,7 +42,11 @@ async function extractAbis() {
       const files = await fs.readdir(fullPath);
 
       for (const file of files) {
-        if (!file.endsWith(".json")) continue;
+        if (
+          !file.endsWith(".json") ||
+          !contractsToExtract.includes(file.split(".")[0])
+        )
+          continue;
 
         const filePath = path.join(fullPath, file);
         const contentRaw = await fs.readFile(filePath, "utf8");
@@ -63,6 +68,7 @@ async function extractAbis() {
     } else {
       console.log(`🎉 Finished exporting ${exportedCount} ABIs.`);
     }
+    console.log(`⚙️  Find the config in package/abi-builder/config.ts`);
   } catch (err) {
     console.error("❌ Error extracting ABIs:", err);
     process.exit(1);
