@@ -1,1 +1,1 @@
-export { default } from "./list-nft-form";
+export { default } from "./ListNftForm";

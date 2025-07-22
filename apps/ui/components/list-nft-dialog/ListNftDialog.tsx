@@ -12,7 +12,7 @@ import {
 import ListNftForm from '../list-nft-form'
 import { Button } from '../ui/button'
 
-const listNftDialog = () => {
+const ListNftDialog = () => {
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -36,4 +36,4 @@ const listNftDialog = () => {
         </Dialog>
     );
 }
-export default listNftDialog;
+export default ListNftDialog;

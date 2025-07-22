@@ -1,1 +1,1 @@
-export { default } from "./list-nft-dialog";
+export { default } from "./ListNftDialog";

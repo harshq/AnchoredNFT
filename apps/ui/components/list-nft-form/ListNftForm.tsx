@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { z } from 'zod'
-import { zodResolver } from "@hookform/resolvers/zod";
+// import { zodResolver } from "@hookform/resolvers/zod";
 import { Resolver, useForm } from "react-hook-form";
 import {
     Form,
@@ -20,6 +20,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { formatNumberWithCommas, sanatiseNumberInput } from '@/utils/NumericInputFormatter'
 import { parseUnits, formatUnits } from 'viem';
+import { zodResolver } from '@/utils/ZodResolver';
 
 const convertRawToBigInt = (val: string) => {
     let priceBigInt = 0n;
