@@ -20,11 +20,13 @@ const PlanetNftGenForm = () => {
     const form = useForm<z.infer<typeof schema>>({
         mode: 'all',
         resolver: zodResolver(schema),
-        defaultValues: {}
+        defaultValues: {
+
+        }
     });
 
-    const onSubmit = () => {
-        console.log("HELLO");
+    const onSubmit = (params: z.infer<typeof schema>) => {
+        console.log("HELLO", params);
     }
 
     return (
