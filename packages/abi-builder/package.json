@@ -1,0 +1,16 @@
+{
+  "name": "abi-builder",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "extractor.ts",
+  "scripts": {
+    "generate": "ts-node extractor.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

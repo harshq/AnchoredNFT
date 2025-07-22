@@ -1,0 +1,38 @@
+[
+  {
+    "type": "function",
+    "name": "generateWithMeta",
+    "inputs": [
+      {
+        "name": "meta",
+        "type": "tuple",
+        "internalType": "struct Meta",
+        "components": [
+          {
+            "name": "base",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "linkedPair",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "pure"
+  }
+]
