@@ -7,7 +7,7 @@
   "type": "module",
   "main": "watcher.ts",
   "scripts": {
-    "watch": "node --loader ts-node/esm --no-warnings=ExperimentalWarning watcher.ts"
+    "dev": "node --loader ts-node/esm --no-warnings=ExperimentalWarning watcher.ts"
   },
   "dependencies": {
     "abi": "*"

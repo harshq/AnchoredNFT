@@ -16,7 +16,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "with": ["ui#dev", "contract#dev"]
+      "with": ["ui#dev", "contract#dev", "event-watcher#dev"]
     }
   }
 }
