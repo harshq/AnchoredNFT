@@ -11,12 +11,14 @@ import {
 } from '../ui/form';
 import { Button } from '../ui/button';
 import { z } from 'zod';
-import { FormInput } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import abi from "abi/PlanetNFT";
+import { simulateContract, writeContract, waitForTransactionReceipt } from "@wagmi/core";
+import { config } from '@/app/configs/rainbowkit';
 
+const PLANET_NFT_ADDRESS = '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82';
 
 const PlanetNftGenForm = () => {
-
     const form = useForm<z.infer<typeof schema>>({
         mode: 'all',
         resolver: zodResolver(schema),
@@ -25,8 +27,38 @@ const PlanetNftGenForm = () => {
         }
     });
 
-    const onSubmit = (params: z.infer<typeof schema>) => {
-        console.log("HELLO", params);
+    const onSubmit = async (params: z.infer<typeof schema>) => {
+        try {
+            const { request } = await simulateContract(config, {
+                abi,
+                functionName: 'terraform',
+                address: PLANET_NFT_ADDRESS,
+            })
+
+            console.log("1", request);
+
+            const hash = await writeContract(config, {
+                abi,
+                functionName: 'terraform',
+                address: PLANET_NFT_ADDRESS,
+            });
+
+            console.log("2", hash);
+
+            const receipt = await waitForTransactionReceipt(config, { hash });
+            console.log("3", receipt);
+            // if (receipt.status == "success") {
+            //     console.log(receipt);
+            // }
+
+
+
+        } catch (error) {
+            console.log("CATCH BLOCK");
+            console.log(error)
+
+        }
+
     }
 
     return (

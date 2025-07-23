@@ -4,6 +4,6 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "anvil --block-time 2 --print-traces"
+    "dev": "anvil --block-time 5 --print-traces --load-state ./anvil-dump.json"
   }
 }
