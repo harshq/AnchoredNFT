@@ -31,7 +31,7 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
     ///        EVENTS        ///
     ////////////////////////////
 
-    event ItemListed(address indexed tokenAddress, uint256 indexed tokenId);
+    event ItemListed(address indexed tokenAddress, uint256 indexed tokenId, uint256 price);
     event ItemDelisted(address indexed tokenAddress, uint256 indexed tokenId);
     event ItemSold(address indexed tokenAddress, uint256 indexed tokenId, address indexed buyer);
 
@@ -160,7 +160,7 @@ contract NFTMarketplace is Ownable, ReentrancyGuard {
             revert NFTMarketplace__PriceMustBeAboveZero();
         }
 
-        emit ItemListed(nftAddress, tokenId);
+        emit ItemListed(nftAddress, tokenId, price);
         s_listing[nftAddress][tokenId] = Listing({seller: msg.sender, price: price});
     }
 
