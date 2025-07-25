@@ -1,0 +1,15 @@
+{
+  "name": "@planet/indexer",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "start": "node ./index.js && rindexer start indexer"
+  },
+  "dependencies": {
+    "@planet/abi": "*",
+    "js-yaml": "^4.1.0"
+  }
+}

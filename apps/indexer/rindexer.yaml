@@ -14,10 +14,9 @@ contracts:
   - name: NFTMarketplace
     details:
       - network: anvil
-        address: 0x9A676e781A523b5d0C0e43731313A708CB607508
-        start_block: "0"
-        # end_block: "19000000"
-    abi: ../abi/NFTMarketplace.json
+        address: '0x9A676e781A523b5d0C0e43731313A708CB607508'
+        start_block: '0'
+    abi: ../../node_modules/@planet/abi/NFTMarketplace.json
     include_events:
       - ItemListed
       - ItemDelisted

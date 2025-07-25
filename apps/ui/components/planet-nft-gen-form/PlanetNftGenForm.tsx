@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import abi from "abi/PlanetNFT";
+import abi from "@planet/abi/PlanetNFT";
 import { simulateContract, writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { config } from '@/app/configs/rainbowkit';
 

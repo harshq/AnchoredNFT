@@ -16,7 +16,11 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "with": ["ui#dev", "contract#dev", "event-watcher#dev"]
+      "with": [
+        "@planet/ui#dev",
+        "@planet/contract#dev",
+        "@planet/event-watcher#dev"
+      ]
     }
   }
 }

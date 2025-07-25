@@ -1,5 +1,5 @@
 {
-  "name": "event-watcher",
+  "name": "@planet/event-watcher",
   "version": "1.0.0",
   "description": "Harshana Abeyaratne",
   "license": "ISC",
@@ -10,7 +10,7 @@
     "dev": "node --loader ts-node/esm --no-warnings=ExperimentalWarning watcher.ts"
   },
   "dependencies": {
-    "abi": "*"
+    "@planet/abi": "*"
   },
   "devDependencies": {
     "dotenv": "^17.2.0",
