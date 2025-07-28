@@ -19,7 +19,8 @@
       "with": [
         "@planet/ui#dev",
         "@planet/contract#dev",
-        "@planet/event-watcher#dev"
+        "@planet/event-watcher#dev",
+        "@planet/api#dev"
       ]
     }
   }
