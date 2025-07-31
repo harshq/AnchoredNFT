@@ -11,6 +11,7 @@ type ItemListed struct {
 	Network         string  `gorm:"column:network;type:varchar(50);not null" json:"network"`
 	TxIndex         string  `gorm:"column:tx_index;type:numeric;not null" json:"tx_index"`
 	LogIndex        string  `gorm:"column:log_index;type:varchar(78);not null" json:"log_index"`
+	Price           *string `gorm:"column:price;type:varchar(78)" json:"price,omitempty"`
 }
 
 func (ItemListed) TableName() string {

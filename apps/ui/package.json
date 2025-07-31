@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@planet/abi": "*",
     "@hookform/resolvers": "^5.1.1",
+    "@planet/abi": "*",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.5",
@@ -22,6 +22,7 @@
     "@wagmi/core": "^2.17.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fast-average-color": "^9.5.0",
     "lucide-react": "^0.525.0",
     "next": "15.3.4",
     "react": "^19.0.0",

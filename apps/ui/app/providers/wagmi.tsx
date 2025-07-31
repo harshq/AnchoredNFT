@@ -2,7 +2,7 @@
 
 import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { isServer, QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { isServer, QueryClientProvider, QueryClient, defaultShouldDehydrateQuery } from "@tanstack/react-query";
 import { config } from "@/app/configs/rainbowkit";
 
 interface Props {
@@ -18,6 +18,15 @@ function makeQueryClient() {
                 // With SSR, we usually want to set some default staleTime
                 // above 0 to avoid refetching immediately on the client
                 staleTime: 60 * 1000,
+            },
+            dehydrate: {
+                // include pending queries in dehydration
+                shouldDehydrateQuery: (query) =>
+                    defaultShouldDehydrateQuery(query) ||
+                    query.state.status === 'pending',
+                shouldRedactErrors: (error) => {
+                    return false
+                },
             },
         },
     })
