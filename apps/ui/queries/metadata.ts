@@ -2,8 +2,8 @@ import { Address } from "viem";
 import { readContract } from "@wagmi/core";
 
 import abi from "@planet/abi/PlanetNFT";
-import { MetadataPlus } from "@/app/types/metadata";
-import { config } from "@/app/configs/rainbowkit";
+import { MetadataPlus } from "@/types/metadata";
+import { config } from "@/configs/rainbowkit";
 import { decodeBase64ToJson } from "@/utils/base64Helper";
 
 export const fetchTokenMeta = async (

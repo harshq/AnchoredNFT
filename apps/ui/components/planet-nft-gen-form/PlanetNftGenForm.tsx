@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import abi from "@planet/abi/PlanetNFT";
 import { simulateContract, writeContract, waitForTransactionReceipt } from "@wagmi/core";
-import { config } from '@/app/configs/rainbowkit';
+import { config } from '@/configs/rainbowkit';
 
 const PLANET_NFT_ADDRESS = '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82';
 

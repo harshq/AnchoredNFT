@@ -1,6 +1,6 @@
 import Header from "@/components/header";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { prefetchActiveListings } from "./queries/listing";
+import { prefetchActiveListings } from "../queries/listing";
 import ActiveListingGrid from "@/components/active-listing-grid";
 
 export default async function Home() {

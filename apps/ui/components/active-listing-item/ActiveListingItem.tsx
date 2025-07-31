@@ -2,7 +2,7 @@
 import React from "react";
 import Image from "next/image";
 import { FastAverageColor } from 'fast-average-color';
-import { MetadataMerged } from "../../app/types/metadata";
+import { MetadataMerged } from "../../types/metadata";
 import { Badge } from "../ui/badge";
 import { formatUnits } from "viem";
 
@@ -15,6 +15,7 @@ const ActiveListingItem = ({
     attributes,
     price
 }: MetadataMerged) => {
+    const [] = React.useState();
     const ref = React.useRef<HTMLDivElement>(null);
     const onLoadingComplete = React.useCallback((img: HTMLImageElement) => {
         const fac = new FastAverageColor();

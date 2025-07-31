@@ -3,7 +3,7 @@
 import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { isServer, QueryClientProvider, QueryClient, defaultShouldDehydrateQuery } from "@tanstack/react-query";
-import { config } from "@/app/configs/rainbowkit";
+import { config } from "@/configs/rainbowkit";
 
 interface Props {
     children: React.ReactNode;

@@ -3,12 +3,12 @@
 import React, { Suspense } from 'react'
 import { useSuspenseQueries } from '@tanstack/react-query';
 
-import { ItemListed, useActiveListing } from '@/app/queries/listing';
-import { fetchTokenMeta } from '@/app/queries/metadata';
+import { ItemListed, useActiveListing } from '@/queries/listing';
+import { fetchTokenMeta } from '@/queries/metadata';
 
 import ActiveListingItem from '../active-listing-item';
 import ActiveListingGridPlaceholder from './ActiveListingGridPlaceholder';
-import { MetadataMerged, MetadataPlus } from '@/app/types/metadata';
+import { MetadataMerged, MetadataPlus } from '@/types/metadata';
 
 const ActiveListingGrid = () => {
     const { data, isLoading } = useActiveListing()

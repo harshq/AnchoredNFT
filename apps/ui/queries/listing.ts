@@ -1,5 +1,5 @@
 import { QueryClient, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { BASE_PATH } from "@/app/constants/api";
+import { BASE_PATH } from "@/constants/api";
 
 const ACTIVE_LISTING_KEY = ["active-listings"];
 
