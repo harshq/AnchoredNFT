@@ -11,13 +11,8 @@ export default async function Home() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Header />
-      <div className="mt-10">
-        <ActiveListingGrid />
-      </div>
-
+      <ActiveListingGrid />
       <div className="h-1000" />
-
-
     </HydrationBoundary>
   );
 }

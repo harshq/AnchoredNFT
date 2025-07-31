@@ -2,14 +2,19 @@
 import React from "react";
 import Image from "next/image";
 import { FastAverageColor } from 'fast-average-color';
-import { Metadata } from "../../app/types/metadata";
+import { MetadataMerged } from "../../app/types/metadata";
+import { Badge } from "../ui/badge";
+import { formatUnits } from "viem";
+
+
 
 const ActiveListingItem = ({
     name,
     image,
     description,
-    attributes
-}: Metadata) => {
+    attributes,
+    price
+}: MetadataMerged) => {
     const ref = React.useRef<HTMLDivElement>(null);
     const onLoadingComplete = React.useCallback((img: HTMLImageElement) => {
         const fac = new FastAverageColor();
@@ -24,13 +29,19 @@ const ActiveListingItem = ({
             });
     }, []);
     return (
-        <div ref={ref} className="rounded-md overflow-hidden">
-            <Image onLoadingComplete={onLoadingComplete} src={image} alt={`${name}-image`} width={400} height={400} />
-            <div className="p-4 flex flex-col gap-2 mt-3">
+        <div ref={ref} className="overflow-hidden p-5">
+            <div className="relative overflow-hidden rounded-md aspect-square">
+                <Image onLoadingComplete={onLoadingComplete} src={image} alt={`${name}-image`} fill />
+            </div>
+            <div className="py-4 flex flex-col gap-2 mt-3">
                 <p className="font-bold text-white">{name}</p>
                 <p className="text-sm text-neutral-400">{description}</p>
             </div>
 
+            <div className="flex items-center justify-between">
+                <div>{attributes.map(a => <Badge>{a.value}</Badge>)}</div>
+                <span className="text-white text-sm font-bold">{price ? `${formatUnits(BigInt(price), 8)} USDT` : '-'}</span>
+            </div>
         </div>
     );
 }

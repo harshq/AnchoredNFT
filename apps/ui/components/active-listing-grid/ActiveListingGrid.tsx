@@ -3,17 +3,14 @@
 import React, { Suspense } from 'react'
 import { useSuspenseQueries } from '@tanstack/react-query';
 
-
-import { useActiveListing } from '@/app/queries/listing';
+import { ItemListed, useActiveListing } from '@/app/queries/listing';
 import { fetchTokenMeta } from '@/app/queries/metadata';
 
 import ActiveListingItem from '../active-listing-item';
 import ActiveListingGridPlaceholder from './ActiveListingGridPlaceholder';
-
+import { MetadataMerged, MetadataPlus } from '@/app/types/metadata';
 
 const ActiveListingGrid = () => {
-
-
     const { data, isLoading } = useActiveListing()
     const metaQueries = useSuspenseQueries({
         queries: (data || []).map(listing => ({
@@ -25,7 +22,17 @@ const ActiveListingGrid = () => {
     });
 
     const isDataLoading = isLoading || metaQueries.some(meta => meta && meta.isLoading);
-    const metas = metaQueries.map(q => q.data).filter(m => !!m);
+    const metas = metaQueries.map(metaQuery => {
+        const itemListed = data.find(item => item.token_id === metaQuery.data?.tokenId);
+        if (!!itemListed && !!metaQuery.data) {
+            return {
+                ...metaQuery.data,
+                ...itemListed
+            } satisfies MetadataMerged
+        }
+
+        return null
+    }).filter(m => !!m);
 
     if (isDataLoading) {
         return <div>Loading data...</div>
@@ -34,7 +41,7 @@ const ActiveListingGrid = () => {
     }
 
     return (
-        <div className="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {
                 metas.map(meta => (<ActiveListingItem key={meta.name} {...meta} />))
             }
