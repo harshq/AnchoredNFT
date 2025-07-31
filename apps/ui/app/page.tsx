@@ -6,7 +6,7 @@ import ActiveListingGrid from "@/components/active-listing-grid";
 export default async function Home() {
   const queryClient = new QueryClient();
 
-  prefetchActiveListings(queryClient);
+  await prefetchActiveListings(queryClient);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

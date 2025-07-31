@@ -2,14 +2,14 @@ import { Address } from "viem";
 import { readContract } from "@wagmi/core";
 
 import abi from "@planet/abi/PlanetNFT";
-import { MetadataPlus } from "@/types/metadata";
 import { config } from "@/configs/rainbowkit";
 import { decodeBase64ToJson } from "@/utils/base64Helper";
+import { Metadata } from "@/types/metadata";
 
 export const fetchTokenMeta = async (
   tokenAddress?: string | null,
   tokenId?: string | null
-): Promise<MetadataPlus | null> => {
+): Promise<Metadata | null> => {
   if (!tokenAddress || !tokenId) {
     return null;
   }
@@ -20,11 +20,5 @@ export const fetchTokenMeta = async (
     args: [tokenId],
   });
 
-  const decoded = decodeBase64ToJson(raw as string);
-
-  return {
-    ...decoded,
-    tokenAddress,
-    tokenId,
-  };
+  return decodeBase64ToJson(raw as string);
 };

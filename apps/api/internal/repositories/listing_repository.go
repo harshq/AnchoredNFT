@@ -21,7 +21,7 @@ func NewListingRepository(logger *log.Logger, db *gorm.DB) *ListingRepository {
 }
 
 func (lr *ListingRepository) GetActiveListings() ([]models.ItemListed, error) {
-	var activeListings []models.ItemListed
+	var activeListings []models.ItemListed = []models.ItemListed{}
 
 	query := `
 		SELECT l.*
@@ -44,6 +44,10 @@ func (lr *ListingRepository) GetActiveListings() ([]models.ItemListed, error) {
 		lr.logger.Printf("error repository: %v", err)
 		return nil, fmt.Errorf("error repository: %v", err)
 	}
+
+	// if len(activeListings) == 0 {
+	// 	return []models.ItemListed{},
+	// }
 
 	return activeListings, nil
 }

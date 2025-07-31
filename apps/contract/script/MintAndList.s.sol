@@ -22,8 +22,8 @@ contract MintAndList is Script, CodeConstants {
         vm.stopBroadcast();
 
         uint256[] memory randomWords = new uint256[](uint256(VRF_RANDOM_WORDS_COUNT));
-        randomWords[0] = uint256(keccak256(abi.encode(block.prevrandao, block.timestamp, requestId, 0))); // base color hue
-        randomWords[1] = uint256(keccak256(abi.encode(block.prevrandao, block.timestamp, requestId, 1))); // ring color hue
+        randomWords[0] = uint256(keccak256(abi.encode(block.number, block.timestamp, requestId, 0))); // base color hue
+        randomWords[1] = uint256(keccak256(abi.encode(block.number, block.timestamp, requestId, 1))); // ring color hue
 
         vm.startBroadcast();
         vm.recordLogs();
