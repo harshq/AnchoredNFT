@@ -1,6 +1,21 @@
-import { zodResolver } from '@/utils/ZodResolver';
+"use client"
+
+import { z } from 'zod';
 import React from 'react'
+import { Loader2Icon } from "lucide-react"
+import { zodResolver } from '@/utils/ZodResolver';
 import { useForm } from "react-hook-form";
+import {
+    simulateContract,
+    writeContract,
+    waitForTransactionReceipt,
+    watchContractEvent
+} from "@wagmi/core";
+import { Address, parseEventLogs } from 'viem';
+
+import abi from "@planet/abi/PlanetNFT";
+import { config } from '@/configs/rainbowkit';
+
 import schema from './schema'
 import {
     Form,
@@ -10,55 +25,81 @@ import {
     FormMessage
 } from '../ui/form';
 import { Button } from '../ui/button';
-import { z } from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import abi from "@planet/abi/PlanetNFT";
-import { simulateContract, writeContract, waitForTransactionReceipt } from "@wagmi/core";
-import { config } from '@/configs/rainbowkit';
-
-const PLANET_NFT_ADDRESS = '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82';
+import { previewContext } from '../token-preview/previewContext';
 
 const PlanetNftGenForm = () => {
+    const context = React.use(previewContext);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [requestId, setRequestId] = React.useState<bigint | null>(null);
+    const [mintSuccess, setMintSuccess] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!requestId) return;
+        const unwatch = watchContractEvent(config, {
+            abi,
+            address: process.env.NEXT_PUBLIC_PLANET_NFT_ADDRESS as Address,
+            eventName: 'PlanetMinted',
+            args: {
+                requestId
+            },
+            onLogs: (logs) => {
+                const match = logs.find(
+                    (log) => (log as any).args?.requestId === requestId
+                );
+                if (match) {
+                    const tokenId = (match as any).args.tokenId;
+                    setIsLoading(false)
+                    setMintSuccess(true);
+                    context?.setTokenId(tokenId);
+                }
+            },
+            onError: () => {
+                setIsLoading(false)
+            }
+        });
+
+        return () => unwatch()
+
+    }, [requestId])
+
     const form = useForm<z.infer<typeof schema>>({
         mode: 'all',
         resolver: zodResolver(schema),
         defaultValues: {
-
+            pricefeedPair: 'BTC/USD'
         }
     });
 
     const onSubmit = async (params: z.infer<typeof schema>) => {
         try {
+            setMintSuccess(false);
+            setIsLoading(true);
             const { request } = await simulateContract(config, {
                 abi,
                 functionName: 'terraform',
-                address: PLANET_NFT_ADDRESS,
+                address: process.env.NEXT_PUBLIC_PLANET_NFT_ADDRESS as Address,
+            })
+            const hash = await writeContract(config, request);
+            const receipt = await waitForTransactionReceipt(config, { hash });
+
+            const events = await parseEventLogs({
+                abi,
+                eventName: 'PlanetRequested',
+                logs: receipt.logs
             })
 
-            console.log("1", request);
-
-            const hash = await writeContract(config, {
-                abi,
-                functionName: 'terraform',
-                address: PLANET_NFT_ADDRESS,
-            });
-
-            console.log("2", hash);
-
-            const receipt = await waitForTransactionReceipt(config, { hash });
-            console.log("3", receipt);
-            // if (receipt.status == "success") {
-            //     console.log(receipt);
-            // }
-
-
-
+            if (events.length > 0) {
+                const event = events[0] as any;
+                if (event?.args?.requestId) {
+                    const requestId = event?.args?.requestId;
+                    setRequestId(requestId);
+                }
+            }
         } catch (error) {
-            console.log("CATCH BLOCK");
             console.log(error)
-
+            setIsLoading(false);
         }
-
     }
 
     return (
@@ -68,7 +109,7 @@ const PlanetNftGenForm = () => {
                     control={form.control}
                     name='pricefeedPair'
                     render={({ field }) => (
-                        <FormItem>
+                        <FormItem className='hidden'>
                             <Select disabled defaultValue={"BTC/USD"} onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger >
@@ -84,7 +125,9 @@ const PlanetNftGenForm = () => {
                         </FormItem>
                     )}
                 />
-                <Button type='submit' variant='default'>Terraform</Button>
+                <Button disabled={isLoading} className='w-full' type='submit' variant='default'>
+                    {isLoading ? <> <Loader2Icon className="animate-spin" />Working on it</> : <>✨ Terraform {mintSuccess ? "another" : ""}</>}
+                </Button>
             </form>
         </Form>
     );

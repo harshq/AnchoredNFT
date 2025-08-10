@@ -2,8 +2,10 @@
 
 import React from 'react'
 import { z } from 'zod'
-// import { zodResolver } from "@hookform/resolvers/zod";
 import { Resolver, useForm } from "react-hook-form";
+import { parseUnits, formatUnits, Address } from 'viem';
+import { readContract, simulateContract, waitForTransactionReceipt, writeContract } from "@wagmi/core";
+
 import {
     Form,
     FormControl,
@@ -15,12 +17,14 @@ import {
 import {
     DialogClose
 } from "@/components/ui/dialog"
+import marketplaceAbi from '@planet/abi/NFTMarketplace'
+import IERC721Abi from '@planet/abi/IERC721'
 import schema from './schema';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { formatNumberWithCommas, sanatiseNumberInput } from '@/utils/NumericInputFormatter'
-import { parseUnits, formatUnits } from 'viem';
 import { zodResolver } from '@/utils/ZodResolver';
+import { config } from '@/configs/rainbowkit';
 
 const convertRawToBigInt = (val: string) => {
     let priceBigInt = 0n;
@@ -31,13 +35,21 @@ const convertRawToBigInt = (val: string) => {
     return priceBigInt;
 }
 
-const ListNftForm = () => {
+interface Props {
+    defaultValues?: {
+        contractAddress?: string
+        tokenId?: string
+    }
+}
+
+const ListNftForm = ({ defaultValues }: Props) => {
+    const hasDefaultValues = defaultValues && Object.keys(defaultValues).length > 1;
     const form = useForm<z.input<typeof schema>>({
         mode: 'all',
         resolver: zodResolver(schema) as unknown as Resolver<z.input<typeof schema>>,
         defaultValues: {
-            contractAddress: "",
-            tokenId: "",
+            contractAddress: defaultValues?.contractAddress ? defaultValues.contractAddress.toString() : "",
+            tokenId: defaultValues?.tokenId ? defaultValues.tokenId.toString() : "",
             price: ""
         }
     });
@@ -47,11 +59,66 @@ const ListNftForm = () => {
     const fee = (price * 1n) / 100n;  // 1% fee
     const net = price - fee;
 
+    const getApprovalToListNFT = async (contractAddress: Address, tokenId: bigint) => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const { request } = await simulateContract(config, {
+                    abi: IERC721Abi,
+                    address: contractAddress,
+                    functionName: 'approve',
+                    args: [
+                        process.env.NEXT_PUBLIC_NFT_MARKETPLACE_ADDRESS as Address,
+                        tokenId
+                    ]
+                });
 
-    const onSubmit = (params: any) => {
-        const parsed = params as z.infer<typeof schema>;
 
-        console.log(parsed);
+                const hash = await writeContract(config, request);
+                const res = await waitForTransactionReceipt(config, { hash })
+                resolve(true);
+            } catch (error) {
+                console.log(error)
+                reject(false);
+            }
+        })
+    }
+
+
+    const onSubmit = async (rawParams: any) => {
+        const params = rawParams satisfies z.infer<typeof schema>;
+        try {
+
+            const success = await getApprovalToListNFT(params.contractAddress, params.tokenId);
+            if (!success) {
+
+                console.log("APPROVE FAILED!");
+                return;
+            };
+
+
+
+
+
+
+            const { request } = await simulateContract(config, {
+                abi: marketplaceAbi,
+                address: process.env.NEXT_PUBLIC_NFT_MARKETPLACE_ADDRESS as Address,
+                functionName: 'listItem',
+                args: [
+                    params.contractAddress,
+                    params.tokenId,
+                    params.price
+                ]
+            })
+
+            const hash = await writeContract(config, request);
+            const res = await waitForTransactionReceipt(config, { hash })
+
+            console.log(res);
+
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     return (
@@ -64,7 +131,7 @@ const ListNftForm = () => {
                         <FormItem>
                             <FormLabel className='text-sm text-gray-700'>NFT Contract Address</FormLabel>
                             <FormControl>
-                                <Input placeholder="0x" {...field} />
+                                <Input placeholder="0x" {...field} readOnly={hasDefaultValues} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -77,7 +144,7 @@ const ListNftForm = () => {
                         <FormItem>
                             <FormLabel className='text-sm text-gray-700'>Token Id</FormLabel>
                             <FormControl>
-                                <Input placeholder='1' {...field} onChange={e => {
+                                <Input readOnly={hasDefaultValues} placeholder='1' {...field} onChange={e => {
                                     const safeValue = sanatiseNumberInput(e.target.value, false);
                                     field.onChange(safeValue);
                                 }} />

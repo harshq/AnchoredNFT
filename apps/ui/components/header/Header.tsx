@@ -1,39 +1,35 @@
-import Image from 'next/image';
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import Link from 'next/link';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import ListNftDialog from '../list-nft-dialog';
-import PlanetNftGenDialog from "../planet-nft-gen-dialog";
 
-const Header = () => {
+import ListNftDialog from '../list-nft-dialog';
+import HeaderBreadcrumbs from './HeaderBreadcrumbs';
+import { Button } from '../ui/button';
+
+interface Props {
+    title: string
+}
+
+const Header = ({ title }: Props) => {
     return (
-        <header className="relative w-full">
-            <Image priority src={'/bg-header.svg'} alt='hero background image' fill className='object-cover -z-10 object-right' />
+        <header className="relative w-full bg-radial from-1% from-sky-950 to-60% to-gray-950">
             <div className='container flex justify-end mx-auto py-3 '>
                 <div className='flex items-center gap-2'>
-                    <PlanetNftGenDialog />
-                    <ListNftDialog />
+                    <Link href={'/terraform'}>
+                        <Button className='bg-blue-600 hover:bg-blue-800 font-bold text-md'>
+                            Terraform Planet
+                        </Button>
+                    </Link>
+                    <ListNftDialog trigger={
+                        <Button className='bg-blue-600 hover:bg-blue-800 font-bold text-md'>
+                            Sell NFT
+                        </Button>
+                    } />
                     <ConnectButton />
                 </div>
             </div>
             <div className='h-40 flex justify-center items-center flex-col'>
-                <h2 className='text-center font-bold text-4xl text-white mb-2'>Explore NFTs</h2>
-                <Breadcrumb>
-                    <BreadcrumbList>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink className='text-stone-300 hover:text-stone-300 font-light' >Home</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink className='text-white hover:text-white'>Explore</BreadcrumbLink>
-                        </BreadcrumbItem>
-                    </BreadcrumbList>
-                </Breadcrumb>
+                <h2 className='text-center font-bold text-4xl text-white mb-2'>{title}</h2>
+                <HeaderBreadcrumbs />
             </div>
         </header>
     );

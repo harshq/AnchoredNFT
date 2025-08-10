@@ -10,15 +10,21 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import ListNftForm from '../list-nft-form'
-import { Button } from '../ui/button'
+// import { Button } from '../ui/button'
 
-const ListNftDialog = () => {
+interface Props {
+    trigger: React.ReactNode
+    defaultValues?: {
+        contractAddress?: string
+        tokenId?: string
+    }
+}
+
+const ListNftDialog = ({ trigger, defaultValues }: Props) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button className='bg-blue-600 hover:bg-blue-800 font-bold text-md'>
-                    Sell NFT
-                </Button>
+                {trigger}
             </DialogTrigger>
             <DialogContent
                 showCloseButton={false}
@@ -31,7 +37,7 @@ const ListNftDialog = () => {
                         Review the details before listing your NFT on the marketplace. <br />A <b>1% service fee</b> applies upon successful sale. Proceeds will be transferred directly to the NFT owner.
                     </DialogDescription>
                 </DialogHeader>
-                <ListNftForm />
+                <ListNftForm defaultValues={defaultValues} />
             </DialogContent>
         </Dialog>
     );

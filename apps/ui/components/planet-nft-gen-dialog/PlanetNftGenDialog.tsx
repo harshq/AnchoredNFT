@@ -4,12 +4,10 @@ import React from 'react'
 import {
     Dialog,
     DialogContent,
-    // DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-// import ListNftForm from '../list-nft-form'
 import { Button } from '../ui/button'
 import PlanetNftGenForm from '../planet-nft-gen-form'
 
@@ -21,10 +19,6 @@ const PlanetNftGenDialog = () => {
             </Button>
         </DialogTrigger>
         <DialogContent
-        // showCloseButton={false}
-        // onInteractOutside={e => e.preventDefault()}
-        // onEscapeKeyDown={e => e.preventDefault()}
-        // onOpenAutoFocus={e => e.preventDefault()}
         >
             <DialogHeader>
                 <DialogTitle>Terraform a new Planet NFT</DialogTitle>
