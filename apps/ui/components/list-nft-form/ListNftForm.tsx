@@ -4,7 +4,6 @@ import React from 'react'
 import { z } from 'zod'
 import { Resolver, useForm } from "react-hook-form";
 import { parseUnits, formatUnits, Address } from 'viem';
-import { readContract, simulateContract, waitForTransactionReceipt, writeContract } from "@wagmi/core";
 
 import {
     Form,
@@ -17,14 +16,13 @@ import {
 import {
     DialogClose
 } from "@/components/ui/dialog"
-import marketplaceAbi from '@planet/abi/NFTMarketplace'
-import IERC721Abi from '@planet/abi/IERC721'
+
 import schema from './schema';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { formatNumberWithCommas, sanatiseNumberInput } from '@/utils/NumericInputFormatter'
 import { zodResolver } from '@/utils/ZodResolver';
-import { config } from '@/configs/rainbowkit';
+import useMarketplace from '@/hooks/useMarketplace';
 
 const convertRawToBigInt = (val: string) => {
     let priceBigInt = 0n;
@@ -37,12 +35,14 @@ const convertRawToBigInt = (val: string) => {
 
 interface Props {
     defaultValues?: {
-        contractAddress?: string
-        tokenId?: string
+        contractAddress?: Address
+        tokenId?: bigint
     }
 }
 
 const ListNftForm = ({ defaultValues }: Props) => {
+    const { getApprovalToList, listItemOnMarketplace } = useMarketplace()
+
     const hasDefaultValues = defaultValues && Object.keys(defaultValues).length > 1;
     const form = useForm<z.input<typeof schema>>({
         mode: 'all',
@@ -55,69 +55,31 @@ const ListNftForm = ({ defaultValues }: Props) => {
     });
 
     const priceRaw = form.watch("price");
-    const price = convertRawToBigInt(priceRaw);
-    const fee = (price * 1n) / 100n;  // 1% fee
-    const net = price - fee;
-
-    const getApprovalToListNFT = async (contractAddress: Address, tokenId: bigint) => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const { request } = await simulateContract(config, {
-                    abi: IERC721Abi,
-                    address: contractAddress,
-                    functionName: 'approve',
-                    args: [
-                        process.env.NEXT_PUBLIC_NFT_MARKETPLACE_ADDRESS as Address,
-                        tokenId
-                    ]
-                });
-
-
-                const hash = await writeContract(config, request);
-                const res = await waitForTransactionReceipt(config, { hash })
-                resolve(true);
-            } catch (error) {
-                console.log(error)
-                reject(false);
-            }
-        })
-    }
-
+    const { fee, net } = React.useMemo(() => {
+        const price = convertRawToBigInt(priceRaw);
+        const fee = (price * 1n) / 100n;  // 1% fee
+        const net = price - fee;
+        return {
+            fee, net
+        }
+    }, [priceRaw])
 
     const onSubmit = async (rawParams: any) => {
         const params = rawParams satisfies z.infer<typeof schema>;
         try {
-
-            const success = await getApprovalToListNFT(params.contractAddress, params.tokenId);
-            if (!success) {
-
-                console.log("APPROVE FAILED!");
+            const approval = await getApprovalToList(params.contractAddress, params.tokenId);
+            if (!approval.success) {
+                console.error(`Approval failed:`, approval.error);
                 return;
             };
 
-
-
-
-
-
-            const { request } = await simulateContract(config, {
-                abi: marketplaceAbi,
-                address: process.env.NEXT_PUBLIC_NFT_MARKETPLACE_ADDRESS as Address,
-                functionName: 'listItem',
-                args: [
-                    params.contractAddress,
-                    params.tokenId,
-                    params.price
-                ]
-            })
-
-            const hash = await writeContract(config, request);
-            const res = await waitForTransactionReceipt(config, { hash })
-
-            console.log(res);
-
+            const listing = await listItemOnMarketplace(params.contractAddress, params.tokenId, params.price);
+            if (!listing.success) {
+                console.error(`Listing failed:`, listing.error);
+                return;
+            };
         } catch (error) {
-            console.log(error)
+            console.error(`Unexpected error`, error)
         }
     }
 

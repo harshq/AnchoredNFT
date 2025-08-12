@@ -6,6 +6,7 @@ import TokenPreview from '@/components/token-preview';
 import PlanetNftGenForm from '@/components/planet-nft-gen-form';
 import { PreviewContextProvider } from '@/components/token-preview/previewContext';
 import PlanetNftListBtn from '@/components/planet-nft-list-btn';
+// import AddToMetaMask from '@/components/add-to-metamask';
 
 export default async function Terraform() {
     const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ export default async function Terraform() {
                         <TokenPreview />
                         <div className='px-5 flex flex-col gap-2 w-[300px]'>
                             <PlanetNftGenForm />
+                            {/* <AddToMetaMask /> */}
                             <PlanetNftListBtn />
                         </div>
                     </div>

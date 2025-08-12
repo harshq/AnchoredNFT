@@ -10,8 +10,8 @@ import { decodeBase64ToJson } from "@/utils/base64Helper";
 import { Metadata } from "@/types/metadata";
 
 interface PreviewContextType {
-  tokenId: string | null;
-  setTokenId: (tokenId: string) => void
+  tokenId: bigint | null;
+  setTokenId: (tokenId: bigint) => void
   metadata: Metadata | null
 }
 
@@ -22,10 +22,10 @@ interface ProviderProps {
 }
 
 export const PreviewContextProvider = ({ children }: ProviderProps) => {
-  const [tokenId, setTokenId] = React.useState<string | null>(null)
+  const [tokenId, setTokenId] = React.useState<bigint | null>(null)
   const [metadata, setMetadata] = React.useState<Metadata | null>(null)
 
-  const fetchTokenMeta = async (tokenId: string) => {
+  const fetchTokenMeta = async (tokenId: bigint) => {
     try {
       const data = await readContract(config, {
         abi,

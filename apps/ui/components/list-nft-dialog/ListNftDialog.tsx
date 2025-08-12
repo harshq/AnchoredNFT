@@ -10,13 +10,14 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import ListNftForm from '../list-nft-form'
+import { Address } from 'viem'
 // import { Button } from '../ui/button'
 
 interface Props {
     trigger: React.ReactNode
     defaultValues?: {
-        contractAddress?: string
-        tokenId?: string
+        contractAddress?: Address
+        tokenId?: bigint
     }
 }
 
