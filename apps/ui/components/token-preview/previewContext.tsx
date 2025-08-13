@@ -9,6 +9,8 @@ import { config } from '@/configs/rainbowkit';
 import { decodeBase64ToJson } from "@/utils/base64Helper";
 import { Metadata } from "@/types/metadata";
 
+const PLANET_NFT_ADDRESS = process.env.NEXT_PUBLIC_PLANET_NFT_ADDRESS as Address;
+
 interface PreviewContextType {
   tokenId: bigint | null;
   setTokenId: (tokenId: bigint) => void
@@ -29,12 +31,17 @@ export const PreviewContextProvider = ({ children }: ProviderProps) => {
     try {
       const data = await readContract(config, {
         abi,
-        address: process.env.NEXT_PUBLIC_PLANET_NFT_ADDRESS as Address,
+        address: PLANET_NFT_ADDRESS,
         functionName: 'tokenURI',
         args: [tokenId]
       });
 
       const parsed = decodeBase64ToJson(data as string);
+      console.log({
+        ...parsed,
+        tokenId,
+        contract: PLANET_NFT_ADDRESS
+      });
       setMetadata(parsed)
     } catch (error) {
       console.log(error);

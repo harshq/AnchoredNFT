@@ -14,6 +14,11 @@ const Header = ({ title }: Props) => {
         <header className="relative w-full bg-radial from-1% from-sky-950 to-60% to-gray-950">
             <div className='container flex justify-end mx-auto py-3 '>
                 <div className='flex items-center gap-2'>
+                    <Link href={'/explore'}>
+                        <Button className='bg-blue-600 hover:bg-blue-800 font-bold text-md'>
+                            Explore
+                        </Button>
+                    </Link>
                     <Link href={'/terraform'}>
                         <Button className='bg-blue-600 hover:bg-blue-800 font-bold text-md'>
                             Terraform Planet

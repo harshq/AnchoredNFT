@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { formatUnits } from "viem";
+import { Address, formatUnits } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { FastAverageColor } from 'fast-average-color';
 import { motion, AnimatePresence } from "motion/react"
@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from "motion/react"
 import { Badge } from "../ui/badge";
 import { ItemListed } from "@/queries/listing";
 import { fetchTokenMeta } from "@/queries/metadata";
+import { Button } from "../ui/button";
+import usePurchaseNFT from "@/hooks/usePurchaseNFT";
 
 const ActiveListingItem = ({
     contract_address,
@@ -25,6 +27,18 @@ const ActiveListingItem = ({
         staleTime: 1000 * 60 * 5
     });
 
+    const { purchase } = usePurchaseNFT();
+    const purchaseNFT = async () => {
+        console.log(price, typeof price)
+        const purchaseNFT = await purchase({
+            address: token_address as Address,
+            tokenId: BigInt(token_id!),
+            price: BigInt(price!)
+        })
+
+        console.log(purchaseNFT)
+    }
+
     const ref = React.useRef<HTMLDivElement>(null);
     const onLoadingComplete = React.useCallback((img: HTMLImageElement) => {
         const fac = new FastAverageColor();
@@ -33,10 +47,9 @@ const ActiveListingItem = ({
                 if (!color.error && ref.current) {
                     ref.current.style.background = `radial-gradient(${color.hex}, black)`;
                 }
-
-                setTimeout(() => {
-                    setIsLoaded(true);
-                }, 200);
+                // setTimeout(() => {
+                setIsLoaded(true);
+                // }, 200);
             })
             .catch(e => {
                 console.log(e);
@@ -47,10 +60,10 @@ const ActiveListingItem = ({
     const isReady = isSuccess && isLoaded;
 
     return (
-        <div ref={ref} className="relative overflow-hidden max-h-[520px]">
+        <div ref={ref} className="relative overflow-hidden max-h-[560px]">
             <AnimatePresence>
                 {!isReady && <motion.div
-                    className="bg-stone-50 absolute h-[520px] w-full flex items-center justify-center z-1"
+                    className="bg-stone-50 absolute h-[560px] w-full flex items-center justify-center z-1"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}>
@@ -87,6 +100,8 @@ const ActiveListingItem = ({
                             <div>{metadata.attributes.map(badge => <Badge key={badge.value}>{badge.value}</Badge>)}</div>
                             <span className="text-white text-sm font-bold">{price ? `${formatUnits(BigInt(price), 6)} USDT` : '-'}</span>
                         </div>
+
+                        <Button onClick={purchaseNFT} className="mt-3 bg-white hover:bg-white cursor-pointer text-black font-bold w-full">Buy</Button>
                     </div>
                 ) : null
             }
