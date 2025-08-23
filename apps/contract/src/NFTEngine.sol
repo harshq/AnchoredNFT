@@ -6,7 +6,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AggregatorV3Interface} from
     "chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import {IEngine, Meta} from "src/IEngine.sol";
+import {IEngine, TokenMetadata, CollateralTokenConfig} from "src/IEngine.sol";
 import {FixedPointString} from "src/FixedPointString.sol";
 
 contract NFTEngine {
@@ -15,17 +15,15 @@ contract NFTEngine {
     error NFTEngine__PricefeedPairsHaveDifferentLengths();
     error NFTEngine__UnsupportedPricefeedPair();
 
-    mapping(string => AggregatorV3Interface) internal s_pricefeeds;
-
-    constructor(string[] memory pricefeedPairs, address[] memory pricefeedAddresses) {
-        if (pricefeedPairs.length != pricefeedAddresses.length) {
-            revert NFTEngine__PricefeedPairsHaveDifferentLengths();
-        }
-
-        for (uint256 i = 0; i < pricefeedPairs.length; i++) {
-            s_pricefeeds[pricefeedPairs[i]] = AggregatorV3Interface(pricefeedAddresses[i]);
-        }
-    }
+    // mapping(string => AggregatorV3Interface) internal s_pricefeeds;
+    // constructor(string[] memory pricefeedPairs, address[] memory pricefeedAddresses) {
+    //     if (pricefeedPairs.length != pricefeedAddresses.length) {
+    //         revert NFTEngine__PricefeedPairsHaveDifferentLengths();
+    //     }
+    //     for (uint256 i = 0; i < pricefeedPairs.length; i++) {
+    //         s_pricefeeds[pricefeedPairs[i]] = AggregatorV3Interface(pricefeedAddresses[i]);
+    //     }
+    // }
 
     function getBackgroundColor(uint256 index) public pure returns (string memory) {
         string[3] memory colors = ["#0e204a", "#043431", "#2e2b03"];
@@ -51,13 +49,13 @@ contract NFTEngine {
         return index == 2 ? staticStars[1] : staticStars[index];
     }
 
-    function _get24hRelativePriceChange(string memory pricefeedPair) private view returns (int256 relativeChange) {
-        if (address(s_pricefeeds[pricefeedPair]) == address(0)) {
-            revert NFTEngine__UnsupportedPricefeedPair();
-        }
+    function _get24hRelativePriceChange(address pricefeedAddress) private view returns (int256 relativeChange) {
+        // if (address(s_pricefeeds[pricefeedPair]) == address(0)) {
+        //     revert NFTEngine__UnsupportedPricefeedPair();
+        // }
 
         (uint80 latestRoundId, int256 latestPrice,, uint256 latestTimestamp,) =
-            s_pricefeeds[pricefeedPair].latestRoundData();
+            AggregatorV3Interface(pricefeedAddress).latestRoundData();
 
         // get 1 day old data from latestTimestamp
         uint80 roundId = latestRoundId;
@@ -69,7 +67,7 @@ contract NFTEngine {
 
             roundId -= 1;
 
-            (, int256 price,, uint256 timestamp,) = s_pricefeeds[pricefeedPair].getRoundData(roundId);
+            (, int256 price,, uint256 timestamp,) = AggregatorV3Interface(pricefeedAddress).getRoundData(roundId);
             if (timestamp <= targetTimestamp) {
                 oldPrice = price;
                 break;
@@ -135,34 +133,48 @@ contract NFTEngine {
         return (startColor, endColor);
     }
 
-    function generateWithMeta(Meta memory meta, uint256 tokenId) external view returns (string memory) {
-        string memory pricefeedPair = meta.linkedPair;
-        int256 relativePriceChange = _get24hRelativePriceChange(pricefeedPair);
+    function generateWithMeta(
+        TokenMetadata calldata metadata,
+        CollateralTokenConfig calldata collateralTokenConfig,
+        uint256 tokenId
+    ) external view returns (string memory) {
+        int256 relativePriceChange = _get24hRelativePriceChange(collateralTokenConfig.priceFeed);
         (string memory startColor, string memory endColor) = getRingColorFromRelativePrice(relativePriceChange);
         uint256 seed = uint256(keccak256(abi.encode(tokenId, block.prevrandao))) % 3;
 
+        return _combineSvgParts(tokenId, collateralTokenConfig.pair, metadata.base, startColor, endColor, seed);
+    }
+
+    function _combineSvgParts(
+        uint256 tokenId,
+        string memory pair,
+        string memory base,
+        string memory startColor,
+        string memory endColor,
+        uint256 seed
+    ) private pure returns (string memory) {
         bytes memory part1 =
             '<svg xmlns="http://www.w3.org/2000/svg" width="6.82666in" height="6.82666in" viewBox="0 0 6.82666 6.82666" xml:space="preserve" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" xmlns:xlink="http://www.w3.org/1999/xlink"><defs>';
 
         string memory part2 = string.concat(
             '<style type="text/css"><![CDATA[',
             ".fil0{fill:hsl(",
-            meta.base,
+            base,
             ",80%,50%)}",
             ".fil1{fill:hsl(",
-            meta.base,
+            base,
             ",80%,30%)}",
             ".fil2{fill:hsl(",
-            meta.base,
+            base,
             ",80%,20%)}",
             ".fil3{fill:hsl(",
-            meta.base,
+            base,
             ",80%,60%)}",
             ".fil4{fill:hsl(",
-            meta.base,
+            base,
             ",80%,70%)}",
             ".fil5{fill:hsl(",
-            meta.base,
+            base,
             ",80%,80%)}",
             ".fil7{fill:none}]]></style>"
         );
@@ -209,7 +221,7 @@ contract NFTEngine {
             '<text x="50%" y="6.6" text-anchor="middle" font-size="0.1" fill="rgba(255,255,255,0.299)" font-family="sans-serif">Planet NFT #',
             Strings.toString(tokenId),
             " is synced to ",
-            pricefeedPair,
+            pair,
             '</text><rect class="fil7" width="6.82666" height="6.82666"/></svg>'
         );
 

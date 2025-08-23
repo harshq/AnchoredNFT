@@ -18,7 +18,7 @@ contract MintAndList is Script, CodeConstants {
 
     function run() external {
         vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
-        uint256 requestId = PlanetNFT(nftAddress).terraform();
+        uint256 requestId = PlanetNFT(nftAddress).terraform(address(0), 10000000);
         vm.stopBroadcast();
 
         uint256[] memory randomWords = new uint256[](uint256(VRF_RANDOM_WORDS_COUNT));

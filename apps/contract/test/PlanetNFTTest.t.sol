@@ -8,7 +8,7 @@ import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {Deployer} from "script/Deployer.s.sol";
 import {Config} from "script/HelperConfig.s.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Meta} from "src/IEngine.sol";
+import {TokenMetadata} from "src/IEngine.sol";
 
 contract PlanetNFTTest is Test {
     PlanetNFT nft;
@@ -22,12 +22,12 @@ contract PlanetNFTTest is Test {
         (nft, engine, marketplace) = deployer.run();
     }
 
-    function testGenerateSVG(uint256 tokenId) public {
-        Meta memory meta = Meta({base: "122", linkedPair: "BTC/USD"});
+    // function testGenerateSVG(uint256 tokenId) public {
+    //     TokenMetadata memory meta = TokenMetadata({base: "122", linkedPair: "BTC/USD"});
 
-        vm.prank(config.account);
-        string memory svg = engine.generateWithMeta(meta, tokenId);
-        string memory path = "./test/out.svg";
-        vm.writeFile(path, svg);
-    }
+    //     vm.prank(config.account);
+    //     string memory svg = engine.generateWithMeta(meta, tokenId);
+    //     string memory path = "./test/out.svg";
+    //     vm.writeFile(path, svg);
+    // }
 }

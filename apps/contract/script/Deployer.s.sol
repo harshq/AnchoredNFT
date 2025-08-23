@@ -30,9 +30,10 @@ contract Deployer is Script, CodeConstants {
         vm.startBroadcast(config.account);
 
         // deploy engine
-        engine = new NFTEngine(config.pricefeedPairs, config.pricefeedAddresses);
+        engine = new NFTEngine();
         // deploy NFT contract
         planetNFT = new PlanetNFT(
+            address(0),
             address(engine),
             address(config.vrfCoordinator),
             config.vrfCoordinatorSubId,

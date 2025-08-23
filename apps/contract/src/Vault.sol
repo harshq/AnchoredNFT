@@ -2,18 +2,22 @@
 pragma solidity 0.8.29;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-enum CollateralType {
-    wBTC,
-    wETH
+struct Deposit {
+    uint256 amount;
+    bool minted;
+    address depositor;
 }
 
-contract Vault is Ownable {
-    mapping(uint256 tokenId => mapping(CollateralType collateralType => uint256 amount)) private tokenIdToDeposit;
-
+contract Vault is Ownable, ReentrancyGuard {
     constructor() Ownable(msg.sender) {}
 
-    function deposit(uint256 tokenId, CollateralType depositType, uint256 amount) external payable {}
+    mapping(uint256 tokenId => mapping(address collateralTokenAddress => Deposit deposit)) private tokenIdToDeposit;
 
-    function withdraw(uint256 tokenId) external {}
+    function deposit(uint256 tokenId, address collateralTokenAddress, uint256 amount) external payable onlyOwner {}
+
+    function withdraw(uint256 tokenId) external onlyOwner nonReentrant {}
+
+    function BalanceOf(uint256 tokenId) external returns (address[] memory collaterals, uint256[] memory amounts) {}
 }
