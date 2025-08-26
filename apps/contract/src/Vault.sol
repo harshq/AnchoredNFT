@@ -3,21 +3,188 @@ pragma solidity 0.8.29;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-struct Deposit {
+struct CollateralPosition {
     uint256 amount;
     bool minted;
     address depositor;
+    uint256 timestamp;
 }
 
 contract Vault is Ownable, ReentrancyGuard {
-    constructor() Ownable(msg.sender) {}
+    error Vault__InvalidCollateralToken(address token);
+    error Vault__CollateralAmountMustBeMoreThanZero();
+    error Vault__CollateralUnsupported(address token);
+    error Vault__CollateralWithdrawalFailed();
+    error Vault__CollateralDepositFailed();
+    error Vault__MintedTokensAreNotRefundable();
+    error Vault__TokenMintPending();
+    error Vault__CollateralDepositLockedPeriod(uint256 unlockTime);
 
-    mapping(uint256 tokenId => mapping(address collateralTokenAddress => Deposit deposit)) private tokenIdToDeposit;
+    event DepositMade(address indexed depositor, address indexed collateral, uint256 indexed tokenId, uint256 amount);
+    event CollateralMinted(uint256 indexed tokenId, address indexed collateral);
+    event CollateralRefunded(
+        uint256 indexed tokenId, address indexed beneficiary, address indexed collateral, uint256 amount
+    );
+    event CollateralWithdrawn(
+        uint256 indexed tokenId, address indexed beneficiary, address indexed collateral, uint256 amount
+    );
 
-    function deposit(uint256 tokenId, address collateralTokenAddress, uint256 amount) external payable onlyOwner {}
+    address[] private s_supportedCollaterals;
+    mapping(uint256 tokenId => mapping(address collateralTokenAddress => CollateralPosition collateral)) private
+        s_tokenIdToCollateral;
 
-    function withdraw(uint256 tokenId) external onlyOwner nonReentrant {}
+    constructor(address[] memory supportedCollaterals) Ownable(msg.sender) {
+        s_supportedCollaterals = supportedCollaterals;
+    }
 
-    function BalanceOf(uint256 tokenId) external returns (address[] memory collaterals, uint256[] memory amounts) {}
+    function deposit(address depositor, uint256 tokenId, address collateralTokenAddress, uint256 amount)
+        external
+        payable
+        onlyOwner
+        nonReentrant
+    {
+        // Checks
+        if (amount == 0) {
+            revert Vault__CollateralAmountMustBeMoreThanZero();
+        }
+
+        if (!supportedCollateral(collateralTokenAddress)) {
+            revert Vault__CollateralUnsupported(collateralTokenAddress);
+        }
+
+        // Effects
+        CollateralPosition storage pos = s_tokenIdToCollateral[tokenId][collateralTokenAddress];
+        pos.amount += amount;
+        pos.depositor = depositor;
+        pos.minted = false;
+        pos.timestamp = block.timestamp;
+
+        // Intractions
+        bool success = SafeERC20.trySafeTransferFrom(IERC20(collateralTokenAddress), depositor, address(this), amount);
+        if (!success) {
+            revert Vault__CollateralDepositFailed();
+        }
+
+        emit DepositMade(depositor, collateralTokenAddress, tokenId, amount);
+    }
+
+    function markMinted(uint256 tokenId, address collateralTokenAddress) external onlyOwner nonReentrant {
+        // Checks
+        if (!supportedCollateral(collateralTokenAddress)) {
+            revert Vault__CollateralUnsupported(collateralTokenAddress);
+        }
+
+        // Effects
+        s_tokenIdToCollateral[tokenId][collateralTokenAddress].minted = true;
+        s_tokenIdToCollateral[tokenId][collateralTokenAddress].depositor = address(0);
+
+        emit CollateralMinted(tokenId, collateralTokenAddress);
+    }
+
+    function refund(uint256 tokenId, address collateralTokenAddress) external onlyOwner nonReentrant {
+        // Checks
+        CollateralPosition memory currentDeposit = s_tokenIdToCollateral[tokenId][collateralTokenAddress];
+        if (currentDeposit.minted) {
+            revert Vault__MintedTokensAreNotRefundable();
+        }
+
+        uint256 depositUnlockTime = currentDeposit.timestamp + 30 minutes;
+        if (block.timestamp < depositUnlockTime) {
+            revert Vault__CollateralDepositLockedPeriod(depositUnlockTime);
+        }
+
+        if (!supportedCollateral(collateralTokenAddress)) {
+            revert Vault__CollateralUnsupported(collateralTokenAddress);
+        }
+
+        // Effects
+        delete s_tokenIdToCollateral[tokenId][collateralTokenAddress];
+
+        // Intractions
+        bool success =
+            SafeERC20.trySafeTransfer(IERC20(collateralTokenAddress), currentDeposit.depositor, currentDeposit.amount);
+        if (!success) {
+            revert Vault__CollateralWithdrawalFailed();
+        }
+
+        emit CollateralRefunded(tokenId, currentDeposit.depositor, collateralTokenAddress, currentDeposit.amount);
+    }
+
+    function withdraw(address beneficiary, uint256 tokenId, address collateralTokenAddress)
+        external
+        onlyOwner
+        nonReentrant
+    {
+        // Checks
+        if (!supportedCollateral(collateralTokenAddress)) {
+            revert Vault__CollateralUnsupported(collateralTokenAddress);
+        }
+
+        CollateralPosition memory currentDeposit = s_tokenIdToCollateral[tokenId][collateralTokenAddress];
+        if (currentDeposit.amount == 0) {
+            revert Vault__CollateralAmountMustBeMoreThanZero();
+        }
+
+        // funds are locked for 30mins. This is to prevent
+        // removing funds while randomness is happening.
+        uint256 depositUnlockTime = currentDeposit.timestamp + 30 minutes;
+        if (block.timestamp < depositUnlockTime) {
+            revert Vault__CollateralDepositLockedPeriod(depositUnlockTime);
+        }
+
+        // not marked minted
+        if (!currentDeposit.minted) {
+            revert Vault__TokenMintPending();
+        }
+
+        // Effects
+        delete s_tokenIdToCollateral[tokenId][collateralTokenAddress];
+
+        // Intractions
+        bool success = SafeERC20.trySafeTransfer(IERC20(collateralTokenAddress), beneficiary, currentDeposit.amount);
+        if (!success) {
+            revert Vault__CollateralWithdrawalFailed();
+        }
+
+        emit CollateralWithdrawn(tokenId, beneficiary, collateralTokenAddress, currentDeposit.amount);
+    }
+
+    function balanceOf(uint256 tokenId)
+        external
+        view
+        onlyOwner
+        returns (address[] memory collaterals, uint256[] memory amounts)
+    {
+        uint256 n = s_supportedCollaterals.length;
+        collaterals = new address[](n);
+        amounts = new uint256[](n);
+
+        uint256 count = 0;
+        for (uint256 i = 0; i < s_supportedCollaterals.length; i++) {
+            if (s_tokenIdToCollateral[tokenId][s_supportedCollaterals[i]].minted) {
+                collaterals[count] = s_supportedCollaterals[i];
+                amounts[count] = s_tokenIdToCollateral[tokenId][s_supportedCollaterals[i]].amount;
+                count++;
+            }
+        }
+
+        // trim arrays to actual length
+        assembly {
+            mstore(collaterals, count)
+            mstore(amounts, count)
+        }
+    }
+
+    function supportedCollateral(address token) public view returns (bool supported) {
+        for (uint256 i = 0; i < s_supportedCollaterals.length; i++) {
+            if (s_supportedCollaterals[i] == token) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

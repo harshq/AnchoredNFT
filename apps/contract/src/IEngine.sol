@@ -10,7 +10,26 @@ struct CollateralTokenConfig {
     string pair;
     address token;
     address priceFeed;
-    uint256 priceFeedPrecision;
+}
+
+struct CollateralConfig {
+    string[] pairs;
+    address[] tokens;
+    address[] priceFeeds;
+}
+
+struct RequestParams {
+    uint256 tokenId;
+    address sender;
+    address collateralTokenAddress;
+    uint256 timestamp;
+}
+
+struct VRFConfig {
+    address vrfCoordinator;
+    uint256 vrfCoordinatorSubId;
+    bytes32 vrfKeyHash;
+    uint32 vrfGasLimit;
 }
 
 interface IEngine {

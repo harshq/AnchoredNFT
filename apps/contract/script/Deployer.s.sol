@@ -11,15 +11,18 @@ import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {NFTEngine} from "src/NFTEngine.sol";
+import {VRFConfig, CollateralConfig} from "src/IEngine.sol";
+import {Vault} from "src/Vault.sol";
 
 contract Deployer is Script, CodeConstants {
-    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace) {
+    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace, Vault) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
         VRFInteractions vrfInteractions = new VRFInteractions();
         NFTEngine engine;
         PlanetNFT planetNFT;
         NFTMarketplace marketplace;
+        Vault vault;
 
         // create and fund the VRF subscription
         if (config.vrfCoordinatorSubId == 0) {
@@ -29,20 +32,27 @@ contract Deployer is Script, CodeConstants {
 
         vm.startBroadcast(config.account);
 
+        vault = new Vault(config.collateralTokens);
         // deploy engine
         engine = new NFTEngine();
         // deploy NFT contract
         planetNFT = new PlanetNFT(
-            address(0),
+            address(vault),
             address(engine),
-            address(config.vrfCoordinator),
-            config.vrfCoordinatorSubId,
-            config.vrfKeyHash,
-            config.vrfGasLimit,
-            config.pricefeedPairs
+            VRFConfig({
+                vrfCoordinator: config.vrfCoordinator,
+                vrfCoordinatorSubId: config.vrfCoordinatorSubId,
+                vrfKeyHash: config.vrfKeyHash,
+                vrfGasLimit: config.vrfGasLimit
+            }),
+            CollateralConfig({
+                pairs: config.collateralPairs,
+                tokens: config.collateralTokens,
+                priceFeeds: config.collateralPriceFeeds
+            })
         );
-        // transfer engine ownership to NFT contract
-        // engine.transferOwnership(address(planetNFT));
+        // transfer vault ownership to NFT contract
+        vault.transferOwnership(address(planetNFT));
 
         // deploy marketplace with accepted token
         marketplace = new NFTMarketplace(config.paymentToken);
@@ -50,9 +60,11 @@ contract Deployer is Script, CodeConstants {
 
         console.log("PlanetNFT is at", address(planetNFT));
         console.log("NFTMarketplace is at", address(marketplace));
+        console.log("Vault is at", address(vault));
+        console.log("NFTEngine is at", address(engine));
 
         // add consumer for VRF
         vrfInteractions.addConsumer(config, address(planetNFT));
-        return (planetNFT, engine, marketplace);
+        return (planetNFT, engine, marketplace, vault);
     }
 }

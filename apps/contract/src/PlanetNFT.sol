@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
-import {IVault} from "src/IVault.sol";
-import {IEngine, TokenMetadata, CollateralTokenConfig} from "src/IEngine.sol";
-import {console2} from "forge-std/console2.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
@@ -11,26 +8,10 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {VRFConsumerBaseV2Plus} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-
-struct RequestParams {
-    address sender;
-    address collateralTokenAddress;
-    uint256 collateralAmount;
-}
-
-struct VRFConfig {
-    address vrfCoordinator;
-    uint256 vrfCoordinatorSubId;
-    bytes32 vrfKeyHash;
-    uint32 vrfGasLimit;
-}
-
-struct CollateralConfig {
-    string[] pairs;
-    address[] tokens;
-    address[] priceFeeds;
-    uint64[] priceFeedPrecisions;
-}
+import {IVault} from "src/IVault.sol";
+import {
+    IEngine, TokenMetadata, CollateralTokenConfig, RequestParams, VRFConfig, CollateralConfig
+} from "src/IEngine.sol";
 
 /**
  * @title PlanetNFT v1
@@ -49,9 +30,10 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     error PlanetNFT__CollateralAmountMustBeMoreThanZero();
     error PlanetNFT__CollateralConfigLengthMismatch();
     error PlanetNFT__CollateralTransferFailed();
+    error PlanetNFT__CallerMustBeTheOwner();
 
-    event PlanetRequested(uint256 indexed requestId, address indexed minter);
-    event PlanetMinted(uint256 indexed requestId, address indexed minter, uint256 indexed tokenId);
+    event PlanetRequested(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
+    event PlanetMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
 
     ////////////////////////////
     ///        STATE         ///
@@ -79,7 +61,6 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
             !(
                 collateralConfig.pairs.length == collateralConfig.tokens.length
                     && collateralConfig.tokens.length == collateralConfig.priceFeeds.length
-                    && collateralConfig.priceFeeds.length == collateralConfig.priceFeedPrecisions.length
             )
         ) {
             revert PlanetNFT__CollateralConfigLengthMismatch();
@@ -96,8 +77,7 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
             i_collateralAddressToConfig[collateralConfig.tokens[i]] = CollateralTokenConfig({
                 pair: collateralConfig.pairs[i],
                 token: collateralConfig.tokens[i],
-                priceFeed: collateralConfig.priceFeeds[i],
-                priceFeedPrecision: collateralConfig.priceFeedPrecisions[i]
+                priceFeed: collateralConfig.priceFeeds[i]
             });
         }
     }
@@ -110,26 +90,55 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
      * Starts terraforming a new PlanetNFT. Initiated a VRF request
      * and emits a event with requestId and creator.
      *
-     * @return requestId VRF request id
+     * @return tokenId TokenId for the NFT
      */
-    function terraform(address collateralTokenAddress, uint256 collateralAmount) external returns (uint256 requestId) {
+    function terraform(address collateralTokenAddress, uint256 collateralAmount) external returns (uint256 tokenId) {
         if (i_collateralAddressToConfig[collateralTokenAddress].token == address(0)) {
             revert PlanetNFT__UnsupportedCollateralToken(collateralTokenAddress);
         }
 
-        if (collateralAmount <= 0) {
+        if (collateralAmount == 0) {
             revert PlanetNFT__CollateralAmountMustBeMoreThanZero();
         }
 
+        bool success = SafeERC20.trySafeTransferFrom(
+            IERC20(collateralTokenAddress), msg.sender, address(i_vault), collateralAmount
+        );
+
+        if (!success) {
+            revert PlanetNFT__CollateralTransferFailed();
+        }
+
+        tokenId = s_counter;
+        s_counter++;
+
+        IVault(i_vault).deposit(msg.sender, tokenId, collateralTokenAddress, collateralAmount);
+
         uint256 vrfRequestId = requestRandomWords();
         s_vrfRequestIdToRequestParams[vrfRequestId] = RequestParams({
+            tokenId: tokenId,
             sender: msg.sender,
             collateralTokenAddress: collateralTokenAddress,
-            collateralAmount: collateralAmount
+            timestamp: block.timestamp
         });
 
-        emit PlanetRequested(vrfRequestId, msg.sender);
-        return vrfRequestId;
+        emit PlanetRequested(vrfRequestId, tokenId, msg.sender);
+        return tokenId;
+    }
+
+    function refundCollateral() external {}
+
+    function withdrawCollateral(uint256 tokenId, address collateralTokenAddress) external {
+        address owner = ownerOf(tokenId);
+        if (msg.sender != owner) {
+            revert PlanetNFT__CallerMustBeTheOwner();
+        }
+
+        return IVault(i_vault).withdraw(owner, tokenId, collateralTokenAddress);
+    }
+
+    function balanceOf(uint256 tokenId) external returns (address[] memory collaterals, uint256[] memory amounts) {
+        return IVault(i_vault).balanceOf(tokenId);
     }
 
     /////////////////////////////////
@@ -220,31 +229,16 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
             revert PlanetNFT__InvalidVrfRequest(requestId);
         }
 
-        bool success = SafeERC20.trySafeTransferFrom(
-            IERC20(requestParams.collateralTokenAddress),
-            requestParams.sender,
-            address(i_vault),
-            requestParams.collateralAmount
-        );
-
-        if (!success) {
-            revert PlanetNFT__CollateralTransferFailed();
-        }
-
         delete s_vrfRequestIdToRequestParams[requestId];
 
-        uint256 tokenId = s_counter;
-        s_counter++;
-
-        IVault(i_vault).deposit(tokenId, requestParams.collateralTokenAddress, requestParams.collateralAmount);
-
-        s_tokenIdToMetadata[tokenId] = TokenMetadata({
+        s_tokenIdToMetadata[requestParams.tokenId] = TokenMetadata({
             base: Strings.toString(randomWords[0] % 360),
             collateralAddress: requestParams.collateralTokenAddress
         });
 
-        _safeMint(requestParams.sender, tokenId);
-        emit PlanetMinted(requestId, requestParams.sender, tokenId);
+        _safeMint(requestParams.sender, requestParams.tokenId);
+        IVault(i_vault).markMinted(requestParams.tokenId, requestParams.collateralTokenAddress);
+        emit PlanetMinted(requestId, requestParams.tokenId, requestParams.sender);
     }
 
     /////////////////////////////////

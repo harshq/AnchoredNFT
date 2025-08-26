@@ -2,7 +2,7 @@
 pragma solidity 0.8.29;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockUSDT} from "test/mock/MockUSDT.t.sol";
+import {MockERC20Token} from "test/mock/MockERC20Token.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
@@ -16,8 +16,9 @@ struct Config {
     uint256 vrfCoordinatorSubId;
     bytes32 vrfKeyHash;
     uint32 vrfGasLimit;
-    string[] pricefeedPairs;
-    address[] pricefeedAddresses;
+    string[] collateralPairs;
+    address[] collateralTokens;
+    address[] collateralPriceFeeds;
 }
 
 contract CodeConstants {
@@ -60,45 +61,54 @@ contract HelperConfig is Script, CodeConstants {
             return s_anvilChainConfig;
         }
 
-        MockUSDT usdt;
+        MockERC20Token weth;
+        MockERC20Token wbtc;
+        MockERC20Token usdt;
         MockLinkToken linkToken;
         VRFCoordinatorV2_5Mock vrfCoordinator;
 
         vm.startBroadcast();
-
         // mock btc aggregator
         MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 100e8);
         btcMockAggregator.updateRoundData(11, 10e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
         btcMockAggregator.updateRoundData(12, 9.8e8, block.timestamp, block.timestamp);
+        wbtc = new MockERC20Token("wBTC", "WBTC", 8);
+        wbtc.mint(ANVIL_DEFAULT_ACCOUNT, 1 ether);
 
         // // mock eth aggregator
         MockV3Aggregator ethMockAggregator = new MockV3Aggregator(8, 10883300000000);
         ethMockAggregator.updateRoundData(11, 100e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
         ethMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
+        weth = new MockERC20Token("WETH", "WETH", 18);
+        weth.mint(ANVIL_DEFAULT_ACCOUNT, 1 ether);
 
         vm.stopBroadcast();
 
-        // mocked pricefeed pairs
-        string[] memory pricefeedPairs = new string[](2);
-        pricefeedPairs[0] = "BTC/USD";
-        pricefeedPairs[1] = "ETH/USD";
+        // collateral config
+        string[] memory collateralPairs = new string[](2);
+        collateralPairs[0] = "BTC/USD";
+        collateralPairs[1] = "ETH/USD";
 
-        // mocked aggregator pairs
-        address[] memory pricefeedAddresses = new address[](2);
-        pricefeedAddresses[0] = address(btcMockAggregator);
-        pricefeedAddresses[1] = address(ethMockAggregator);
+        address[] memory collateralTokens = new address[](2);
+        collateralTokens[0] = address(wbtc);
+        collateralTokens[1] = address(weth);
+
+        address[] memory collateralPriceFeeds = new address[](2);
+        collateralPriceFeeds[0] = address(btcMockAggregator);
+        collateralPriceFeeds[1] = address(ethMockAggregator);
 
         vm.startBroadcast();
 
         linkToken = new MockLinkToken();
-
         vrfCoordinator =
             new VRFCoordinatorV2_5Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE_LINK, VRF_MOCK_WEI_PER_UNIT_LINK);
 
-        usdt = new MockUSDT();
+        usdt = new MockERC20Token("USDT", "USDT", 8);
         usdt.mint(ANVIL_DEFAULT_ACCOUNT, 1000e6);
         vm.stopBroadcast();
 
+        console.log("wBTC mock deployed at", address(wbtc));
+        console.log("wETH mock deployed at", address(weth));
         console.log("USDT mock deployed at", address(usdt));
         console.log("LINK token mock deployed at", address(linkToken));
         console.log("VRFCoordinator deployed at", address(vrfCoordinator));
@@ -107,14 +117,15 @@ contract HelperConfig is Script, CodeConstants {
             account: ANVIL_DEFAULT_ACCOUNT,
             paymentToken: address(usdt),
             linkToken: address(linkToken),
-            // VRF mock related: Need following
+            // vrf stuff
             vrfCoordinator: address(vrfCoordinator),
             vrfCoordinatorSubId: 0, // to be updated in VRFInteractions
-            // VRF mock related: Random are fine for local
             vrfKeyHash: 0x111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000,
             vrfGasLimit: 500_000,
-            pricefeedPairs: pricefeedPairs,
-            pricefeedAddresses: pricefeedAddresses
+            // collateral stuff
+            collateralPairs: collateralPairs,
+            collateralTokens: collateralTokens,
+            collateralPriceFeeds: collateralPriceFeeds
         });
 
         return s_anvilChainConfig;
