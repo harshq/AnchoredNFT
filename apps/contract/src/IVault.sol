@@ -12,5 +12,8 @@ interface IVault {
 
     function refund(uint256 tokenId, address collateralTokenAddress) external;
 
-    function balanceOf(uint256 tokenId) external returns (address[] memory collaterals, uint256[] memory amounts);
+    function balanceOf(uint256 tokenId)
+        external
+        view
+        returns (address[] memory collaterals, uint256[] memory amounts);
 }

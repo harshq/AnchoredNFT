@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
 
+import {DevOpsTools} from "foundry-devops/src/DevOpsTools.sol";
 import {Script, console} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
@@ -15,7 +16,7 @@ import {VRFConfig, CollateralConfig} from "src/IEngine.sol";
 import {Vault} from "src/Vault.sol";
 
 contract Deployer is Script, CodeConstants {
-    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace, Vault) {
+    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace, Vault, Config memory) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
         VRFInteractions vrfInteractions = new VRFInteractions();
@@ -65,6 +66,6 @@ contract Deployer is Script, CodeConstants {
 
         // add consumer for VRF
         vrfInteractions.addConsumer(config, address(planetNFT));
-        return (planetNFT, engine, marketplace, vault);
+        return (planetNFT, engine, marketplace, vault, config);
     }
 }

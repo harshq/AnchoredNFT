@@ -34,8 +34,10 @@ struct VRFConfig {
 
 interface IEngine {
     function generateWithMeta(
-        TokenMetadata calldata metadata,
-        CollateralTokenConfig calldata collateralTokenConfig,
-        uint256 tokenId
+        uint256 tokenId,
+        string memory tokenBase,
+        string memory collateralPair,
+        address pricefeed,
+        uint256 collateralAmount
     ) external pure returns (string memory);
 }

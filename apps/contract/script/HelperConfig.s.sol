@@ -2,7 +2,9 @@
 pragma solidity 0.8.29;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockERC20Token} from "test/mock/MockERC20Token.sol";
+import {USDTMock} from "test/mock/USDTMock.sol";
+import {WBTCMock} from "test/mock/WBTCMock.sol";
+import {WETHMock} from "test/mock/WETHMock.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
@@ -61,26 +63,26 @@ contract HelperConfig is Script, CodeConstants {
             return s_anvilChainConfig;
         }
 
-        MockERC20Token weth;
-        MockERC20Token wbtc;
-        MockERC20Token usdt;
+        WETHMock weth;
+        WBTCMock wbtc;
+        USDTMock usdt;
         MockLinkToken linkToken;
         VRFCoordinatorV2_5Mock vrfCoordinator;
 
         vm.startBroadcast();
         // mock btc aggregator
-        MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 100e8);
-        btcMockAggregator.updateRoundData(11, 10e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
-        btcMockAggregator.updateRoundData(12, 9.8e8, block.timestamp, block.timestamp);
-        wbtc = new MockERC20Token("wBTC", "WBTC", 8);
-        wbtc.mint(ANVIL_DEFAULT_ACCOUNT, 1 ether);
+        MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 10e8);
+        btcMockAggregator.updateRoundData(11, 10e8, (block.timestamp - 1 days), (block.timestamp - 1 days)); // day older
+        btcMockAggregator.updateRoundData(12, 9.8e8, block.timestamp, block.timestamp); // latest
+        wbtc = new WBTCMock();
+        wbtc.mint(ANVIL_DEFAULT_ACCOUNT, 100 ether);
 
         // // mock eth aggregator
-        MockV3Aggregator ethMockAggregator = new MockV3Aggregator(8, 10883300000000);
-        ethMockAggregator.updateRoundData(11, 100e8, (block.timestamp - 1 days), (block.timestamp - 1 days));
-        ethMockAggregator.updateRoundData(12, 100e8, block.timestamp, block.timestamp);
-        weth = new MockERC20Token("WETH", "WETH", 18);
-        weth.mint(ANVIL_DEFAULT_ACCOUNT, 1 ether);
+        MockV3Aggregator ethMockAggregator = new MockV3Aggregator(18, 4e18);
+        ethMockAggregator.updateRoundData(11, 4.4e18, (block.timestamp - 1 days), (block.timestamp - 1 days)); // day older
+        ethMockAggregator.updateRoundData(12, 4.5e18, block.timestamp, block.timestamp); // latest
+        weth = new WETHMock();
+        weth.mint(ANVIL_DEFAULT_ACCOUNT, 100 ether);
 
         vm.stopBroadcast();
 
@@ -103,7 +105,7 @@ contract HelperConfig is Script, CodeConstants {
         vrfCoordinator =
             new VRFCoordinatorV2_5Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE_LINK, VRF_MOCK_WEI_PER_UNIT_LINK);
 
-        usdt = new MockERC20Token("USDT", "USDT", 8);
+        usdt = new USDTMock();
         usdt.mint(ANVIL_DEFAULT_ACCOUNT, 1000e6);
         vm.stopBroadcast();
 

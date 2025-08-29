@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Script, console2} from "forge-std/Script.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -12,13 +13,18 @@ import {VRFCoordinatorV2_5Mock} from
 import {HelperConfig, Config, CodeConstants} from "script/HelperConfig.s.sol";
 
 contract MintAndList is Script, CodeConstants {
+    address vault = DevOpsTools.get_most_recent_deployment("Vault", block.chainid);
+    address weth = DevOpsTools.get_most_recent_deployment("WETHMock", block.chainid);
     address nftAddress = DevOpsTools.get_most_recent_deployment("PlanetNFT", block.chainid);
     address coordinator = DevOpsTools.get_most_recent_deployment("VRFCoordinatorV2_5Mock", block.chainid);
     address marketplaceAddress = DevOpsTools.get_most_recent_deployment("NFTMarketplace", block.chainid);
 
     function run() external {
         vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
-        uint256 requestId = PlanetNFT(nftAddress).terraform(address(0), 10000000);
+
+        IERC20(weth).approve(vault, 1e18);
+
+        uint256 requestId = PlanetNFT(nftAddress).terraform(weth, 1e18);
         vm.stopBroadcast();
 
         uint256[] memory randomWords = new uint256[](uint256(VRF_RANDOM_WORDS_COUNT));
@@ -37,7 +43,7 @@ contract MintAndList is Script, CodeConstants {
             if (logs[i].topics.length > 0) {
                 if (PlanetNFT.PlanetMinted.selector == logs[i].topics[0]) {
                     console2.log("Plant Minted event!");
-                    tokenId = uint256(logs[i].topics[3]);
+                    tokenId = uint256(logs[i].topics[2]);
                     console2.log("TOKENID", tokenId);
                 }
             }
