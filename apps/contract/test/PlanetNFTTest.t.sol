@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -25,8 +25,15 @@ contract PlanetNFTTest is Test {
     }
 
     function testGenerateSVG(uint256 tokenId) public {
-        string memory svg =
-            engine.generateWithMeta(tokenId, "122", config.collateralPairs[0], config.collateralPriceFeeds[0], 1e18);
+        string memory svg = engine.generateWithMeta(
+            tokenId,
+            "122",
+            config.collateralPairs[0],
+            config.collateralBases[0],
+            config.collateralTokens[0],
+            config.collateralUniswapV3Pools[0],
+            1e18 // 1 token in system
+        );
         string memory path = "./test/out.svg";
         vm.writeFile(path, svg);
     }

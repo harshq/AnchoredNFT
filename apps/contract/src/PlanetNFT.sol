@@ -2,7 +2,6 @@
 pragma solidity 0.8.29;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -65,14 +64,15 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     {
         if (
             !(
-                collateralConfig.pairs.length == collateralConfig.tokens.length
-                    && collateralConfig.tokens.length == collateralConfig.priceFeeds.length
+                collateralConfig.pairs.length == collateralConfig.bases.length
+                    && collateralConfig.bases.length == collateralConfig.tokens.length
+                    && collateralConfig.tokens.length == collateralConfig.pools.length
             )
         ) {
             revert PlanetNFT__CollateralConfigLengthMismatch();
         }
 
-        if (collateralConfig.priceFeeds.length == 0) {
+        if (collateralConfig.pools.length == 0) {
             revert PlanetNFT__NeedAtleastOnePricefeedPair();
         }
         i_vault = vault;
@@ -82,8 +82,9 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         for (uint256 i = 0; i < collateralConfig.pairs.length; i++) {
             i_collateralAddressToConfig[collateralConfig.tokens[i]] = CollateralTokenConfig({
                 pair: collateralConfig.pairs[i],
+                base: collateralConfig.bases[i],
                 token: collateralConfig.tokens[i],
-                priceFeed: collateralConfig.priceFeeds[i]
+                pool: collateralConfig.pools[i]
             });
         }
     }
@@ -210,7 +211,13 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         CollateralTokenConfig memory collateralTokenConfig = i_collateralAddressToConfig[metadata.collateralAddress];
 
         return IEngine(i_nftEngine).generateWithMeta(
-            tokenId, metadata.base, collateralTokenConfig.pair, collateralTokenConfig.priceFeed, amount
+            tokenId,
+            metadata.base,
+            collateralTokenConfig.pair,
+            collateralTokenConfig.base,
+            collateralTokenConfig.token,
+            collateralTokenConfig.pool,
+            amount
         );
     }
 

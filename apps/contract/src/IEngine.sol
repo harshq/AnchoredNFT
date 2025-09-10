@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
 struct TokenMetadata {
@@ -8,14 +8,16 @@ struct TokenMetadata {
 
 struct CollateralTokenConfig {
     string pair;
+    address base;
     address token;
-    address priceFeed;
+    address pool;
 }
 
 struct CollateralConfig {
     string[] pairs;
+    address[] bases;
     address[] tokens;
-    address[] priceFeeds;
+    address[] pools;
 }
 
 struct RequestParams {
@@ -37,7 +39,9 @@ interface IEngine {
         uint256 tokenId,
         string memory tokenBase,
         string memory collateralPair,
-        address pricefeed,
+        address collateralBase,
+        address collateralToken,
+        address collateralPool,
         uint256 collateralAmount
     ) external pure returns (string memory);
 }

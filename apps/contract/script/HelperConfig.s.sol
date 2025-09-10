@@ -8,7 +8,9 @@ import {WETHMock} from "test/mock/WETHMock.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
-import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
+// import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
+import {UniswapV3PoolMock} from "test/mock/UniswapV3PoolMock.sol";
+import {UniswapV3PoolStaticMock} from "test/mock/UniswapV3MockStatic.sol";
 
 struct Config {
     address account;
@@ -19,8 +21,9 @@ struct Config {
     bytes32 vrfKeyHash;
     uint32 vrfGasLimit;
     string[] collateralPairs;
+    address[] collateralBases;
     address[] collateralTokens;
-    address[] collateralPriceFeeds;
+    address[] collateralUniswapV3Pools;
 }
 
 contract CodeConstants {
@@ -70,19 +73,37 @@ contract HelperConfig is Script, CodeConstants {
         VRFCoordinatorV2_5Mock vrfCoordinator;
 
         vm.startBroadcast();
-        // mock btc aggregator
-        MockV3Aggregator btcMockAggregator = new MockV3Aggregator(8, 10e8);
-        btcMockAggregator.updateRoundData(11, 10e8, (block.timestamp - 1 days), (block.timestamp - 1 days)); // day older
-        btcMockAggregator.updateRoundData(12, 9.8e8, block.timestamp, block.timestamp); // latest
+        // mock btc pool
+        // current 1300
+        // 24h ago 1200
+        // int56[] memory btcMockTicks = new int56[](2);
+        // btcMockTicks[0] = int56(163000 * 86400);
+        // btcMockTicks[1] = int56(162950 * 86400);
+        // uint160 sqrtPriceX96 = 273000000000000000000000000000000000000;
+        // int24 currentTick = 162950;
+        UniswapV3PoolStaticMock btcUniswapV3PoolMock = new UniswapV3PoolStaticMock();
         wbtc = new WBTCMock();
         wbtc.mint(ANVIL_DEFAULT_ACCOUNT, 100 ether);
 
-        // // mock eth aggregator
-        MockV3Aggregator ethMockAggregator = new MockV3Aggregator(18, 4e18);
-        ethMockAggregator.updateRoundData(11, 4.4e18, (block.timestamp - 1 days), (block.timestamp - 1 days)); // day older
-        ethMockAggregator.updateRoundData(12, 4.5e18, block.timestamp, block.timestamp); // latest
+        // mock eth/usdt pool
+        // current 1300
+        // 24h ago 1200
+        // int56[] memory ethMockTicks = new int56[](2);
+        // ethMockTicks[0] = int56(118360 * 86400);
+        // ethMockTicks[1] = int56(118400 * 86400);
+        // uint160 sqrtPriceX96Eth = 2856612024059740072175611162719;
+        // int24 currentTickEth = 118400;
+        UniswapV3PoolMock ethUniswapV3PoolMock = new UniswapV3PoolMock(2_000, 2_100, 3600, 18, 8);
         weth = new WETHMock();
         weth.mint(ANVIL_DEFAULT_ACCOUNT, 100 ether);
+
+        // other contract deployments
+        linkToken = new MockLinkToken();
+        vrfCoordinator =
+            new VRFCoordinatorV2_5Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE_LINK, VRF_MOCK_WEI_PER_UNIT_LINK);
+
+        usdt = new USDTMock();
+        usdt.mint(ANVIL_DEFAULT_ACCOUNT, 1000e6);
 
         vm.stopBroadcast();
 
@@ -91,23 +112,17 @@ contract HelperConfig is Script, CodeConstants {
         collateralPairs[0] = "BTC/USD";
         collateralPairs[1] = "ETH/USD";
 
+        address[] memory collateralBases = new address[](2);
+        collateralBases[0] = address(usdt);
+        collateralBases[1] = address(usdt);
+
         address[] memory collateralTokens = new address[](2);
         collateralTokens[0] = address(wbtc);
         collateralTokens[1] = address(weth);
 
-        address[] memory collateralPriceFeeds = new address[](2);
-        collateralPriceFeeds[0] = address(btcMockAggregator);
-        collateralPriceFeeds[1] = address(ethMockAggregator);
-
-        vm.startBroadcast();
-
-        linkToken = new MockLinkToken();
-        vrfCoordinator =
-            new VRFCoordinatorV2_5Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE_LINK, VRF_MOCK_WEI_PER_UNIT_LINK);
-
-        usdt = new USDTMock();
-        usdt.mint(ANVIL_DEFAULT_ACCOUNT, 1000e6);
-        vm.stopBroadcast();
+        address[] memory collateralUniswapV3Pools = new address[](2);
+        collateralUniswapV3Pools[0] = address(btcUniswapV3PoolMock);
+        collateralUniswapV3Pools[1] = address(ethUniswapV3PoolMock);
 
         console.log("wBTC mock deployed at", address(wbtc));
         console.log("wETH mock deployed at", address(weth));
@@ -126,8 +141,9 @@ contract HelperConfig is Script, CodeConstants {
             vrfGasLimit: 500_000,
             // collateral stuff
             collateralPairs: collateralPairs,
+            collateralBases: collateralBases,
             collateralTokens: collateralTokens,
-            collateralPriceFeeds: collateralPriceFeeds
+            collateralUniswapV3Pools: collateralUniswapV3Pools
         });
 
         return s_anvilChainConfig;
