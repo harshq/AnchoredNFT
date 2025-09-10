@@ -47,9 +47,10 @@ contract Deployer is Script, CodeConstants {
                 vrfGasLimit: config.vrfGasLimit
             }),
             CollateralConfig({
+                bases: config.collateralBases,
                 pairs: config.collateralPairs,
                 tokens: config.collateralTokens,
-                priceFeeds: config.collateralPriceFeeds
+                pools: config.collateralUniswapV3Pools
             })
         );
         // transfer vault ownership to NFT contract

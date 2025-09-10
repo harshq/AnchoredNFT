@@ -1,56 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
-// import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {AggregatorV3Interface} from
-    "chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import {TokenMetadata, CollateralTokenConfig} from "src/IEngine.sol";
 import {FixedPointString} from "src/FixedPointString.sol";
 import {SVGParts} from "src/SVGParts.sol";
-import {CodeConstants} from "src/CodeConstants.sol";
+import {Constants} from "src/Constants.sol";
+import {UniswapCalculations} from "src/UniswapCalculations.sol";
 
-contract NFTEngine is CodeConstants {
-    // using FixedPointString for int256;
-
+contract NFTEngine {
     error NFTEngine__PricefeedPairsHaveDifferentLengths();
     error NFTEngine__UnsupportedPricefeedPair();
-
-    function _get24hRelativePriceChange(address pricefeedAddress, uint256 collateralAmount)
-        private
-        view
-        returns (int256 relativeChange, int256 collateralValueUsd)
-    {
-        uint8 decimals = AggregatorV3Interface(pricefeedAddress).decimals();
-        (uint80 latestRoundId, int256 latestPrice,, uint256 latestTimestamp,) =
-            AggregatorV3Interface(pricefeedAddress).latestRoundData();
-
-        // collateralAmount is 1e18. therefore collateralValueUsd is also 1e18.
-        collateralValueUsd = (latestPrice * int256(collateralAmount)) / int256(10 ** uint256(decimals));
-
-        // get 1 day old data from latestTimestamp
-        uint80 roundId = latestRoundId;
-        uint256 targetTimestamp = latestTimestamp - 1 days;
-        int256 oldPrice = latestPrice;
-
-        while (true) {
-            if (roundId == 0) break;
-
-            roundId -= 1;
-
-            (, int256 price,, uint256 timestamp,) = AggregatorV3Interface(pricefeedAddress).getRoundData(roundId);
-            if (timestamp <= targetTimestamp) {
-                oldPrice = price;
-                break;
-            }
-        }
-
-        // get the precentage
-        int256 diff = latestPrice - oldPrice;
-        relativeChange = (diff * int256(PRECISION)) / (oldPrice); // scaled by 1e18
-
-        return (relativeChange, collateralValueUsd);
-    }
 
     function getRingColorFromRelativePrice(int256 relativePriceChange)
         internal
@@ -64,7 +23,7 @@ contract NFTEngine is CodeConstants {
             return ("rgba(255,255,255,0.4)", "rgba(255,255,255,0.01)");
         }
 
-        // relativePriceChange is the relative price * 1e18
+        // relativePriceChange is the relative price scaled to 1e18
         if (isPositive) {
             startColor = absRelativePrice < 1e15
                 ? "rgba(51,195,26,0)" // <0.1%
@@ -108,11 +67,15 @@ contract NFTEngine is CodeConstants {
         uint256 tokenId,
         string memory tokenBase,
         string memory collateralPair,
-        address pricefeed,
+        address collateralBase,
+        address collateralToken,
+        address collateralPool,
         uint256 collateralAmount
     ) external view returns (string memory) {
-        (int256 relativePriceChange, int256 collateralValueUsd) =
-            _get24hRelativePriceChange(pricefeed, collateralAmount);
+        (int256 relativePriceChange, int256 collateralValueUsd) = UniswapCalculations.getRelativePriceChange(
+            collateralBase, collateralToken, collateralPool, collateralAmount
+        );
+
         (string memory startColor, string memory endColor) = getRingColorFromRelativePrice(relativePriceChange);
         uint256 seed = uint256(keccak256(abi.encode(tokenId, tokenBase, block.prevrandao))) % 3;
 
@@ -134,7 +97,9 @@ contract NFTEngine is CodeConstants {
                 SVGParts.styles(base),
                 SVGParts.additionalStyles(startColor, endColor, seed),
                 SVGParts.planet(),
-                SVGParts.footer(tokenId, pair, FixedPointString.toFixedStringSigned(collateralValueUsd, 18, 2))
+                SVGParts.footer(
+                    tokenId, pair, FixedPointString.toFixedStringSigned(collateralValueUsd, Constants.DECIMALS, 2)
+                )
             )
         );
     }

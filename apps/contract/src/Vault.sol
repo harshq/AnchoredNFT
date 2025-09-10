@@ -1,10 +1,12 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {PrecisionScaler} from "src/PrecisionScaler.sol";
+import {Constants} from "src/Constants.sol";
 
 struct CollateralPosition {
     uint256 amount;
@@ -23,10 +25,12 @@ contract Vault is Ownable, ReentrancyGuard {
     error Vault__TokenMintPending();
     error Vault__CollateralDepositLockedPeriod(uint256 unlockTime);
 
-    event DepositMade(address indexed depositor, address indexed collateral, uint256 indexed tokenId, uint256 amount);
+    event DepositMade(
+        address indexed depositor, address indexed collateral, uint256 indexed tokenId, uint256 rawDepositAmount
+    );
     event CollateralMinted(uint256 indexed tokenId, address indexed collateral);
     event CollateralRefunded(
-        uint256 indexed tokenId, address indexed beneficiary, address indexed collateral, uint256 amount
+        uint256 indexed tokenId, address indexed beneficiary, address indexed collateral, uint256 rawDepositAmount
     );
     event CollateralWithdrawn(
         uint256 indexed tokenId, address indexed beneficiary, address indexed collateral, uint256 amount
@@ -40,14 +44,14 @@ contract Vault is Ownable, ReentrancyGuard {
         s_supportedCollaterals = supportedCollaterals;
     }
 
-    function deposit(address depositor, uint256 tokenId, address collateralTokenAddress, uint256 amount)
+    function deposit(address depositor, uint256 tokenId, address collateralTokenAddress, uint256 rawDepositAmount)
         external
         payable
         onlyOwner
         nonReentrant
     {
         // Checks
-        if (amount == 0) {
+        if (rawDepositAmount == 0) {
             revert Vault__CollateralAmountMustBeMoreThanZero();
         }
 
@@ -57,18 +61,22 @@ contract Vault is Ownable, ReentrancyGuard {
 
         // Effects
         CollateralPosition storage pos = s_tokenIdToCollateral[tokenId][collateralTokenAddress];
-        pos.amount += amount;
+        pos.amount += PrecisionScaler.normalizeToSystemPrecision(
+            rawDepositAmount, IERC20Metadata(collateralTokenAddress).decimals()
+        );
         pos.depositor = depositor;
         pos.minted = false;
         pos.timestamp = block.timestamp;
 
         // Intractions
-        bool success = SafeERC20.trySafeTransferFrom(IERC20(collateralTokenAddress), depositor, address(this), amount);
+        bool success = SafeERC20.trySafeTransferFrom(
+            IERC20Metadata(collateralTokenAddress), depositor, address(this), rawDepositAmount
+        );
         if (!success) {
             revert Vault__CollateralDepositFailed();
         }
 
-        emit DepositMade(depositor, collateralTokenAddress, tokenId, amount);
+        emit DepositMade(depositor, collateralTokenAddress, tokenId, rawDepositAmount);
     }
 
     function markMinted(uint256 tokenId, address collateralTokenAddress) external onlyOwner nonReentrant {
@@ -103,14 +111,20 @@ contract Vault is Ownable, ReentrancyGuard {
         // Effects
         delete s_tokenIdToCollateral[tokenId][collateralTokenAddress];
 
+        uint256 rawDepositAmount = PrecisionScaler.normalizeToPrecision(
+            currentDeposit.amount, Constants.DECIMALS, IERC20Metadata(collateralTokenAddress).decimals()
+        );
+
         // Intractions
-        bool success =
-            SafeERC20.trySafeTransfer(IERC20(collateralTokenAddress), currentDeposit.depositor, currentDeposit.amount);
+        bool success = SafeERC20.trySafeTransfer(
+            IERC20Metadata(collateralTokenAddress), currentDeposit.depositor, rawDepositAmount
+        );
+
         if (!success) {
             revert Vault__CollateralWithdrawalFailed();
         }
 
-        emit CollateralRefunded(tokenId, currentDeposit.depositor, collateralTokenAddress, currentDeposit.amount);
+        emit CollateralRefunded(tokenId, currentDeposit.depositor, collateralTokenAddress, rawDepositAmount);
     }
 
     function withdraw(address beneficiary, uint256 tokenId, address collateralTokenAddress)
@@ -144,12 +158,16 @@ contract Vault is Ownable, ReentrancyGuard {
         delete s_tokenIdToCollateral[tokenId][collateralTokenAddress];
 
         // Intractions
-        bool success = SafeERC20.trySafeTransfer(IERC20(collateralTokenAddress), beneficiary, currentDeposit.amount);
+        uint256 rawDepositAmount = PrecisionScaler.normalizeToPrecision(
+            currentDeposit.amount, Constants.DECIMALS, IERC20Metadata(collateralTokenAddress).decimals()
+        );
+
+        bool success = SafeERC20.trySafeTransfer(IERC20Metadata(collateralTokenAddress), beneficiary, rawDepositAmount);
         if (!success) {
             revert Vault__CollateralWithdrawalFailed();
         }
 
-        emit CollateralWithdrawn(tokenId, beneficiary, collateralTokenAddress, currentDeposit.amount);
+        emit CollateralWithdrawn(tokenId, beneficiary, collateralTokenAddress, rawDepositAmount);
     }
 
     function balanceOf(uint256 tokenId)
