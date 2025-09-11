@@ -28,10 +28,10 @@ contract PlanetNFTTest is Test {
         string memory svg = engine.generateWithMeta(
             tokenId,
             "122",
-            config.collateralPairs[0],
-            config.collateralBases[0],
-            config.collateralTokens[0],
-            config.collateralUniswapV3Pools[0],
+            config.collateralPairs[1],
+            config.collateralBases[1],
+            config.collateralTokens[1],
+            config.collateralUniswapV3Pools[1],
             1e18 // 1 token in system
         );
         string memory path = "./test/out.svg";

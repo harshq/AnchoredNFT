@@ -7,7 +7,7 @@ import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
 import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
-import {HelperConfig, Config, CodeConstants} from "script/HelperConfig.s.sol";
+import {HelperConfig, Config} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
@@ -15,7 +15,7 @@ import {NFTEngine} from "src/NFTEngine.sol";
 import {VRFConfig, CollateralConfig} from "src/IEngine.sol";
 import {Vault} from "src/Vault.sol";
 
-contract Deployer is Script, CodeConstants {
+contract Deployer is Script {
     function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace, Vault, Config memory) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
