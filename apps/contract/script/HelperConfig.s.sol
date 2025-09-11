@@ -64,12 +64,13 @@ contract HelperConfig is Script {
 
         vm.startBroadcast();
 
+        weth = new WETHMock();
+        weth.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 100 ether);
+
         // mock btc pool
         wbtc = new WBTCMock();
         wbtc.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 100 ether);
         // mock eth/usdt pool
-        weth = new WETHMock();
-        weth.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 100 ether);
 
         usdt = new USDTMock();
         usdt.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 1000e6);
@@ -85,11 +86,9 @@ contract HelperConfig is Script {
 
         // other contract deployments
         linkToken = new MockLinkToken();
-        vrfCoordinator =
-            new VRFCoordinatorV2_5Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE_LINK, VRF_MOCK_WEI_PER_UNIT_LINK);
-
-        usdt = new USDTMock();
-        usdt.mint(ANVIL_DEFAULT_ACCOUNT, 1000e6);
+        vrfCoordinator = new VRFCoordinatorV2_5Mock(
+            Constants.VRF_MOCK_BASE_FEE, Constants.VRF_MOCK_GAS_PRICE_LINK, Constants.VRF_MOCK_WEI_PER_UNIT_LINK
+        );
 
         vm.stopBroadcast();
 
