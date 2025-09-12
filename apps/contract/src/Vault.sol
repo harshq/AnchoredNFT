@@ -99,6 +99,8 @@ contract Vault is Ownable, ReentrancyGuard {
             revert Vault__MintedTokensAreNotRefundable();
         }
 
+        // funds are locked for 30mins. This is to prevent
+        // removing funds while randomness is happening.
         uint256 depositUnlockTime = currentDeposit.timestamp + 30 minutes;
         if (block.timestamp < depositUnlockTime) {
             revert Vault__CollateralDepositLockedPeriod(depositUnlockTime);
@@ -140,13 +142,6 @@ contract Vault is Ownable, ReentrancyGuard {
         CollateralPosition memory currentDeposit = s_tokenIdToCollateral[tokenId][collateralTokenAddress];
         if (currentDeposit.amount == 0) {
             revert Vault__CollateralAmountMustBeMoreThanZero();
-        }
-
-        // funds are locked for 30mins. This is to prevent
-        // removing funds while randomness is happening.
-        uint256 depositUnlockTime = currentDeposit.timestamp + 30 minutes;
-        if (block.timestamp < depositUnlockTime) {
-            revert Vault__CollateralDepositLockedPeriod(depositUnlockTime);
         }
 
         // not marked minted
@@ -194,6 +189,10 @@ contract Vault is Ownable, ReentrancyGuard {
             mstore(collaterals, count)
             mstore(amounts, count)
         }
+    }
+
+    function hasDeposit(uint256 tokenId, address collateralTokenAddress) external view onlyOwner returns (bool) {
+        return s_tokenIdToCollateral[tokenId][collateralTokenAddress].amount > 0;
     }
 
     function supportedCollateral(address token) public view returns (bool supported) {

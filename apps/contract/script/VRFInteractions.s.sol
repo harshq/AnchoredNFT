@@ -20,7 +20,7 @@ contract VRFInteractions is Script {
             vm.startBroadcast(config.account);
             console.log("Funding VRF subscription ID:", config.vrfCoordinatorSubId);
             VRFCoordinatorV2_5Mock(config.vrfCoordinator).fundSubscription(
-                config.vrfCoordinatorSubId, 10000000000 ether
+                config.vrfCoordinatorSubId, Constants.VRF_FUND_AMOUNT_LINK
             );
             vm.stopBroadcast();
         } else {

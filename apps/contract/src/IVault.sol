@@ -16,4 +16,6 @@ interface IVault {
         external
         view
         returns (address[] memory collaterals, uint256[] memory amounts);
+
+    function hasDeposit(uint256 tokenId, address collateralTokenAddress) external view returns (bool);
 }

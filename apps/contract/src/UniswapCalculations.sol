@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
-import {console} from "forge-std/console.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {Constants} from "src/Constants.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
@@ -42,22 +41,14 @@ library UniswapCalculations {
         view
         returns (uint256 normalizedCurrentUnit, int24 currentTick)
     {
-        console.log("ctx.collateralToken", ctx.collateralToken);
-        console.log("ctx.collateralBase", ctx.collateralBase);
-
-        console.log("ctx.collateralDecimals", ctx.collateralDecimals);
-        console.log("ctx.baseDecimals", ctx.baseDecimals);
-
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(ctx.collateralPool).slot0();
-        console.log("sqrtPriceX96", sqrtPriceX96);
         currentTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-        console.log("currentTick", currentTick);
-        uint256 quote = OracleLibrary.getQuoteAtTick(
-            currentTick, uint128(10 ** ctx.collateralDecimals), ctx.collateralToken, ctx.collateralBase
+        normalizedCurrentUnit = PrecisionScaler.normalizeToSystemPrecision(
+            OracleLibrary.getQuoteAtTick(
+                currentTick, uint128(10 ** ctx.collateralDecimals), ctx.collateralToken, ctx.collateralBase
+            ),
+            ctx.baseDecimals
         );
-        console.log("quote", quote);
-        normalizedCurrentUnit = PrecisionScaler.normalizeToSystemPrecision(quote, ctx.baseDecimals);
-        console.log("normalizedCurrentUnit", normalizedCurrentUnit);
     }
 
     function getRelativePriceChange(
@@ -70,9 +61,6 @@ library UniswapCalculations {
         uint32[] memory timeAgo = new uint32[](2);
         timeAgo[0] = uint32(Constants.PRICE_CHANGE_DURATION);
         timeAgo[1] = 0;
-
-        // console.log("xx ** ", IERC20Metadata(collateralToken).decimals());
-
         // context for quote calc
         QuoteContext memory ctx = QuoteContext({
             collateralBase: collateralBase,
@@ -84,9 +72,7 @@ library UniswapCalculations {
 
         // normalized unit price
         uint256 normalizedTwapUnit = getTwapQuoteUnit(ctx, timeAgo);
-        console.log("normalizedTwapUnit", normalizedTwapUnit);
         (uint256 normalizedCurrentUnit, int24 currentTick) = getCurrentQuoteUnit(ctx);
-        console.log("normalizedCurrentUnit", normalizedCurrentUnit);
 
         if (normalizedTwapUnit == 0) revert NFTEngine__TwapQuoteIsZero();
 

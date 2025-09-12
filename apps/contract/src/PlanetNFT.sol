@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {VRFConsumerBaseV2Plus} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "chainlink-brownie-contracts/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {IVault} from "src/IVault.sol";
+import {Constants} from "src/Constants.sol";
 import {
     IEngine, TokenMetadata, CollateralTokenConfig, RequestParams, VRFConfig, CollateralConfig
 } from "src/IEngine.sol";
@@ -30,6 +30,7 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     error PlanetNFT__CollateralConfigLengthMismatch();
     error PlanetNFT__CollateralTransferFailed();
     error PlanetNFT__CallerMustBeTheOwner();
+    error PlanetNFT__NoCollateralForToken();
 
     event PlanetRequested(
         uint256 indexed requestId,
@@ -39,13 +40,11 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         address indexed minter
     );
     event PlanetMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
+    event PlanetDestroyed(uint256 indexed tokenId, address indexed owner);
 
     ////////////////////////////
     ///        STATE         ///
     ////////////////////////////
-    uint32 private constant VRF_RANDOM_WORDS_COUNT = 2;
-    uint16 private constant VRF_REQ_CONFIRMATIONS = 3;
-
     uint256 private s_counter;
     address private immutable i_vault;
     address private immutable i_nftEngine;
@@ -131,15 +130,19 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         return vrfRequestId;
     }
 
-    function refundCollateral() external {}
+    function refundCollateral(uint256 tokenId, address collateralTokenAddress) external {
+        IVault(i_vault).refund(tokenId, collateralTokenAddress);
+    }
 
-    function withdrawCollateral(uint256 tokenId, address collateralTokenAddress) external {
+    function liquidate(uint256 tokenId, address collateralTokenAddress) external {
         address owner = ownerOf(tokenId);
         if (msg.sender != owner) {
             revert PlanetNFT__CallerMustBeTheOwner();
         }
 
-        return IVault(i_vault).withdraw(owner, tokenId, collateralTokenAddress);
+        _burn(tokenId);
+        IVault(i_vault).withdraw(owner, tokenId, collateralTokenAddress);
+        emit PlanetDestroyed(tokenId, owner);
     }
 
     function balanceOf(uint256 tokenId)
@@ -258,6 +261,11 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
 
         delete s_vrfRequestIdToRequestParams[requestId];
 
+        bool hasDeposit = IVault(i_vault).hasDeposit(requestParams.tokenId, requestParams.collateralTokenAddress);
+        if (!hasDeposit) {
+            revert PlanetNFT__NoCollateralForToken();
+        }
+
         s_tokenIdToMetadata[requestParams.tokenId] = TokenMetadata({
             base: Strings.toString(randomWords[0] % 360),
             collateralAddress: requestParams.collateralTokenAddress
@@ -282,9 +290,9 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_vrfConfig.vrfKeyHash,
                 subId: i_vrfConfig.vrfCoordinatorSubId,
-                requestConfirmations: VRF_REQ_CONFIRMATIONS,
+                requestConfirmations: Constants.VRF_REQ_CONFIRMATIONS,
                 callbackGasLimit: i_vrfConfig.vrfGasLimit,
-                numWords: VRF_RANDOM_WORDS_COUNT,
+                numWords: Constants.VRF_RANDOM_WORDS_COUNT,
                 extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
             })
         );
