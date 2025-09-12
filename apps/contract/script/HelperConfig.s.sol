@@ -8,8 +8,6 @@ import {WETHMock} from "test/mock/WETHMock.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
-// import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
-// import {UniswapV3PoolMock} from "test/mock/UniswapV3PoolMock.sol";
 import {UniswapV3PoolStaticMockBTC} from "test/mock/UniswapV3MockStaticBTC.sol";
 import {UniswapV3PoolStaticMockETH} from "test/mock/UniswapV3MockStaticETH.sol";
 import {Constants} from "src/Constants.sol";
@@ -67,22 +65,14 @@ contract HelperConfig is Script {
         weth = new WETHMock();
         weth.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 100 ether);
 
-        // mock btc pool
         wbtc = new WBTCMock();
         wbtc.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 100 ether);
-        // mock eth/usdt pool
 
         usdt = new USDTMock();
         usdt.mint(Constants.ANVIL_DEFAULT_ACCOUNT, 1000e6);
 
         UniswapV3PoolStaticMockBTC btcUniswapV3PoolMock = new UniswapV3PoolStaticMockBTC(address(usdt), address(wbtc));
         UniswapV3PoolStaticMockETH ethUniswapV3PoolMock = new UniswapV3PoolStaticMockETH(address(usdt), address(weth));
-
-        // other contract deployments
-        linkToken = new MockLinkToken();
-        vrfCoordinator = new VRFCoordinatorV2_5Mock(
-            Constants.VRF_MOCK_BASE_FEE, Constants.VRF_MOCK_GAS_PRICE_LINK, Constants.VRF_MOCK_WEI_PER_UNIT_LINK
-        );
 
         // other contract deployments
         linkToken = new MockLinkToken();

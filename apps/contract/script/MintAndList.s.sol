@@ -4,13 +4,11 @@ pragma solidity 0.8.29;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Script, console2} from "forge-std/Script.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {VRFCoordinatorV2_5Mock} from
     "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
-import {HelperConfig, Config} from "script/HelperConfig.s.sol";
 import {Constants} from "src/Constants.sol";
 
 contract MintAndList is Script {
@@ -30,7 +28,6 @@ contract MintAndList is Script {
 
         uint256[] memory randomWords = new uint256[](uint256(Constants.VRF_RANDOM_WORDS_COUNT));
         randomWords[0] = uint256(keccak256(abi.encode(block.number, block.timestamp, requestId, 0))); // base color hue
-        randomWords[1] = uint256(keccak256(abi.encode(block.number, block.timestamp, requestId, 1))); // ring color hue
 
         vm.startBroadcast();
         vm.recordLogs();

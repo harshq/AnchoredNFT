@@ -2,8 +2,7 @@
 pragma solidity 0.8.29;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Test, console} from "forge-std/Test.sol";
-import {TokenMetadata, CollateralTokenConfig} from "src/IEngine.sol";
+import {Test} from "forge-std/Test.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
 import {NFTEngine} from "src/NFTEngine.sol";
 import {Vault} from "src/Vault.sol";
@@ -24,16 +23,18 @@ contract PlanetNFTTest is Test {
         (nft, engine, marketplace, vault, config) = deployer.run();
     }
 
-    function testGenerateSVG(uint256 tokenId) public {
+    function testGenerateSVG(uint256 tokenId, uint256 color) public {
+        vm.startPrank(address(nft));
         string memory svg = engine.generateWithMeta(
             tokenId,
-            "122",
+            Strings.toString(color % 360),
             config.collateralPairs[1],
             config.collateralBases[1],
             config.collateralTokens[1],
             config.collateralUniswapV3Pools[1],
             1e18 // 1 token in system
         );
+        vm.stopPrank();
         string memory path = "./test/out.svg";
         vm.writeFile(path, svg);
     }

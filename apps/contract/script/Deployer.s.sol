@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
 
-import {DevOpsTools} from "foundry-devops/src/DevOpsTools.sol";
 import {Script, console} from "forge-std/Script.sol";
-import {VRFCoordinatorV2_5Mock} from
-    "chainlink-brownie-contracts/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
-import {MockLinkToken} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/MockLinkToken.sol";
-import {MockV3Aggregator} from "chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 import {HelperConfig, Config} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {PlanetNFT} from "src/PlanetNFT.sol";
@@ -56,14 +51,12 @@ contract Deployer is Script {
         // transfer vault ownership to NFT contract
         vault.transferOwnership(address(planetNFT));
 
+        // transfer engine ownership to NFT contract
+        engine.transferOwnership(address(planetNFT));
+
         // deploy marketplace with accepted token
         marketplace = new NFTMarketplace(config.paymentToken);
         vm.stopBroadcast();
-
-        console.log("PlanetNFT is at", address(planetNFT));
-        console.log("NFTMarketplace is at", address(marketplace));
-        console.log("Vault is at", address(vault));
-        console.log("NFTEngine is at", address(engine));
 
         // add consumer for VRF
         vrfInteractions.addConsumer(config, address(planetNFT));

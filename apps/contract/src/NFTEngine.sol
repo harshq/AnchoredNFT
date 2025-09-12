@@ -6,14 +6,18 @@ import {FixedPointString} from "src/FixedPointString.sol";
 import {SVGParts} from "src/SVGParts.sol";
 import {Constants} from "src/Constants.sol";
 import {UniswapCalculations} from "src/UniswapCalculations.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTEngine {
+contract NFTEngine is Ownable {
     error NFTEngine__PricefeedPairsHaveDifferentLengths();
     error NFTEngine__UnsupportedPricefeedPair();
 
+    constructor() Ownable(msg.sender) {}
+
     function getRingColorFromRelativePrice(int256 relativePriceChange)
         internal
-        pure
+        view
+        onlyOwner
         returns (string memory startColor, string memory endColor)
     {
         bool isPositive = relativePriceChange >= 0;
@@ -71,7 +75,7 @@ contract NFTEngine {
         address collateralToken,
         address collateralPool,
         uint256 collateralAmount
-    ) external view returns (string memory) {
+    ) external view onlyOwner returns (string memory) {
         (int256 relativePriceChange, int256 collateralValueUsd) = UniswapCalculations.getRelativePriceChange(
             collateralBase, collateralToken, collateralPool, collateralAmount
         );
@@ -90,7 +94,7 @@ contract NFTEngine {
         string memory startColor,
         string memory endColor,
         uint256 seed
-    ) private pure returns (string memory) {
+    ) private view onlyOwner returns (string memory) {
         return string(
             abi.encodePacked(
                 SVGParts.header(),
@@ -98,7 +102,11 @@ contract NFTEngine {
                 SVGParts.additionalStyles(startColor, endColor, seed),
                 SVGParts.planet(),
                 SVGParts.footer(
-                    tokenId, pair, FixedPointString.toFixedStringSigned(collateralValueUsd, Constants.DECIMALS, 2)
+                    tokenId,
+                    pair,
+                    FixedPointString.toFixedStringSigned(
+                        collateralValueUsd, Constants.DECIMALS, Constants.AMOUNT_PRECISION_SVG
+                    )
                 )
             )
         );
