@@ -12,7 +12,7 @@ library Constants {
     uint96 public constant VRF_MOCK_BASE_FEE = 0.25 ether;
     uint96 public constant VRF_MOCK_GAS_PRICE_LINK = 1e9;
     int256 public constant VRF_MOCK_WEI_PER_UNIT_LINK = 4e15;
-    uint256 public constant VRF_FUND_AMOUNT_LINK = 5 ether; // 5 link
+    uint256 public constant VRF_FUND_AMOUNT_LINK = 500 ether; // 5 link
     // vrf request
     uint32 public constant VRF_RANDOM_WORDS_COUNT = 1;
     uint16 public constant VRF_REQ_CONFIRMATIONS = 3;

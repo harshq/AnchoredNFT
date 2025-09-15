@@ -9,56 +9,62 @@ import {VRFV2PlusClient} from "chainlink-brownie-contracts/contracts/src/v0.8/vr
 import {IVault} from "src/IVault.sol";
 import {Constants} from "src/Constants.sol";
 import {
-    IEngine, TokenMetadata, CollateralTokenConfig, RequestParams, VRFConfig, CollateralConfig
-} from "src/IEngine.sol";
+    EngineConfig,
+    TokenMetadata,
+    CollateralTokenConfig,
+    RequestParams,
+    VRFConfig,
+    CollateralConfig
+} from "src/Structs.sol";
+import {IEngine} from "src/IEngine.sol";
 
 /**
- * @title PlanetNFT v1
+ * @title AnchoredNFT
  * @author Harshana Abeyaratne
  *
- * A procedurally generated planet with random colors and rotation.
- *
- * @notice uses predictable randomness generator. To be
- * refactored to use Chainlink VRR.
- *
  */
-contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
-    error PlanetNFT__InvalidVrfRequest(uint256 requestId);
-    error PlanetNFT__NeedAtleastOnePricefeedPair();
-    error PlanetNFT__UnsupportedCollateralToken(address token);
-    error PlanetNFT__CollateralAmountMustBeMoreThanZero();
-    error PlanetNFT__CollateralConfigLengthMismatch();
-    error PlanetNFT__CollateralTransferFailed();
-    error PlanetNFT__CallerMustBeTheOwner();
-    error PlanetNFT__NoCollateralForToken();
+contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
+    error AnchoredNFT__InvalidVrfRequest(uint256 requestId);
+    error AnchoredNFT__NeedAtleastOnePricefeedPair();
+    error AnchoredNFT__UnsupportedCollateralToken(address token);
+    error AnchoredNFT__CollateralAmountMustBeMoreThanZero();
+    error AnchoredNFT__CollateralConfigLengthMismatch();
+    error AnchoredNFT__CollateralTransferFailed();
+    error AnchoredNFT__CallerMustBeTheOwner();
+    error AnchoredNFT__NoCollateralForToken();
+    error AnchoredNFT__EngineNotFound(address engine);
+    error AnchoredNFT__EngineNotAvailable(address engine);
 
-    event PlanetRequested(
+    event NFTRequested(
         uint256 indexed requestId,
         uint256 indexed tokenId,
         address collateralTokenAddress,
         uint256 collateralAmount,
         address indexed minter
     );
-    event PlanetMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
-    event PlanetDestroyed(uint256 indexed tokenId, address indexed owner);
+    event NFTMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
+    event NFTDestroyed(uint256 indexed tokenId, address indexed owner);
+    event EngineAdded(address indexed engine);
+    event EngineStateChanged(bool indexed newState);
 
     ////////////////////////////
     ///        STATE         ///
     ////////////////////////////
     uint256 private s_counter;
     address private immutable i_vault;
-    address private immutable i_nftEngine;
     VRFConfig private i_vrfConfig;
 
+    address[] s_engines;
     mapping(uint256 tokenId => TokenMetadata metadata) private s_tokenIdToMetadata;
     mapping(uint256 requestId => RequestParams sender) s_vrfRequestIdToRequestParams;
     mapping(address collateralAddress => CollateralTokenConfig collateralTokenConfig) i_collateralAddressToConfig;
+    mapping(address engine => EngineConfig engineConfig) i_engineToConfig;
 
     ////////////////////////////
     ///     CONSTRUCTOR      ///
     ////////////////////////////
-    constructor(address vault, address nftEngine, VRFConfig memory vrfConfig, CollateralConfig memory collateralConfig)
-        ERC721("PlanetNFT", "PNFT")
+    constructor(address vault, VRFConfig memory vrfConfig, CollateralConfig memory collateralConfig)
+        ERC721("AnchoredNFT", "ANCR")
         VRFConsumerBaseV2Plus(vrfConfig.vrfCoordinator)
     {
         if (
@@ -68,14 +74,13 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
                     && collateralConfig.tokens.length == collateralConfig.pools.length
             )
         ) {
-            revert PlanetNFT__CollateralConfigLengthMismatch();
+            revert AnchoredNFT__CollateralConfigLengthMismatch();
         }
 
         if (collateralConfig.pools.length == 0) {
-            revert PlanetNFT__NeedAtleastOnePricefeedPair();
+            revert AnchoredNFT__NeedAtleastOnePricefeedPair();
         }
         i_vault = vault;
-        i_nftEngine = nftEngine;
         i_vrfConfig = vrfConfig;
 
         for (uint256 i = 0; i < collateralConfig.pairs.length; i++) {
@@ -92,23 +97,45 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     ///    EXTERNAL FUNCTIONS     ///
     /////////////////////////////////
 
+    function addEngine(address engine) external onlyOwner {
+        s_engines.push(engine);
+        i_engineToConfig[engine] = EngineConfig({engine: engine, addedOn: block.timestamp, paused: false});
+
+        emit EngineAdded(engine);
+    }
+
+    function toggleEngine(address engine) external onlyOwner {
+        bool state = i_engineToConfig[engine].paused;
+        i_engineToConfig[engine].paused = !state;
+
+        emit EngineStateChanged(!state);
+    }
+
     /**
-     * Starts terraforming a new PlanetNFT. Initiated a VRF request
+     * Starts terraforming a new ANCR. Initiated a VRF request
      * and emits a event with requestId and creator.
      *
      * @return vrfRequestId requestId for the Randomness
      */
-    function terraform(address collateralTokenAddress, uint256 collateralAmount)
+    function create(address engine, address collateralTokenAddress, uint256 collateralAmount)
         external
         returns (uint256 vrfRequestId)
     {
         // Checks
+        if (i_engineToConfig[engine].engine == address(0)) {
+            revert AnchoredNFT__EngineNotFound(engine);
+        }
+
+        if (i_engineToConfig[engine].paused) {
+            revert AnchoredNFT__EngineNotAvailable(engine);
+        }
+
         if (i_collateralAddressToConfig[collateralTokenAddress].token == address(0)) {
-            revert PlanetNFT__UnsupportedCollateralToken(collateralTokenAddress);
+            revert AnchoredNFT__UnsupportedCollateralToken(collateralTokenAddress);
         }
 
         if (collateralAmount == 0) {
-            revert PlanetNFT__CollateralAmountMustBeMoreThanZero();
+            revert AnchoredNFT__CollateralAmountMustBeMoreThanZero();
         }
 
         // Effects
@@ -120,13 +147,14 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
 
         vrfRequestId = requestRandomWords();
         s_vrfRequestIdToRequestParams[vrfRequestId] = RequestParams({
+            engine: engine,
             tokenId: tokenId,
             sender: msg.sender,
             collateralTokenAddress: collateralTokenAddress,
             timestamp: block.timestamp
         });
 
-        emit PlanetRequested(vrfRequestId, tokenId, collateralTokenAddress, collateralAmount, msg.sender);
+        emit NFTRequested(vrfRequestId, tokenId, collateralTokenAddress, collateralAmount, msg.sender);
         return vrfRequestId;
     }
 
@@ -134,15 +162,15 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
         IVault(i_vault).refund(tokenId, collateralTokenAddress);
     }
 
-    function liquidate(uint256 tokenId, address collateralTokenAddress) external {
+    function destroy(uint256 tokenId, address collateralTokenAddress) external {
         address owner = ownerOf(tokenId);
         if (msg.sender != owner) {
-            revert PlanetNFT__CallerMustBeTheOwner();
+            revert AnchoredNFT__CallerMustBeTheOwner();
         }
 
         _burn(tokenId);
         IVault(i_vault).withdraw(owner, tokenId, collateralTokenAddress);
-        emit PlanetDestroyed(tokenId, owner);
+        emit NFTDestroyed(tokenId, owner);
     }
 
     function balanceOf(uint256 tokenId)
@@ -163,12 +191,13 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
      * @param tokenId token id of NFT
      * @return metadata metadata for NFT
      */
-    function tokenURI(uint256 tokenId) public view override returns (string memory metadata) {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
 
+        TokenMetadata memory metadata = s_tokenIdToMetadata[tokenId];
         (address[] memory collaterals, uint256[] memory amounts) = IVault(i_vault).balanceOf(tokenId);
 
-        string memory svg = generateSVGForTokenId(tokenId, collaterals[0], amounts[0]);
+        string memory svg = generateSVGForTokenId(tokenId, metadata, collaterals[0], amounts[0]);
         string memory imageUri = svgToImageURI(svg);
 
         return string(
@@ -182,16 +211,20 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
                         " #",
                         Strings.toString(tokenId),
                         '",',
-                        '"description":"A procedurally generated planet that changes color with each glance.",',
-                        '"image":"',
+                        '"description":"',
+                        IEngine(metadata.engine).description(),
+                        '","image":"',
                         imageUri,
-                        '",',
-                        '"attributes":[{"collateral":"',
+                        '","attributes":[',
+                        '{"trait_type":"Engine", "value":"',
+                        IEngine(metadata.engine).name(),
+                        '"},{"trait_type":"Synced Pair", "value":"',
+                        i_collateralAddressToConfig[collaterals[0]].pair,
+                        '"},{"trait_type":"Collateral Token", "value":"',
                         Strings.toHexString(collaterals[0]),
-                        '","value":"',
+                        '"},{"trait_type":"Collateral Amount", "value":"',
                         Strings.toString(amounts[0]),
-                        '"}]',
-                        "}"
+                        '"}]}'
                     )
                 )
             )
@@ -205,15 +238,14 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
      * @param tokenId token id of the NFT
      * @return svg generated svg
      */
-    function generateSVGForTokenId(uint256 tokenId, address, /* collateral */ uint256 amount)
-        public
-        view
-        returns (string memory svg)
-    {
-        TokenMetadata memory metadata = s_tokenIdToMetadata[tokenId];
+    function generateSVGForTokenId(
+        uint256 tokenId,
+        TokenMetadata memory metadata,
+        address, /* collateral */
+        uint256 amount
+    ) private view returns (string memory svg) {
         CollateralTokenConfig memory collateralTokenConfig = i_collateralAddressToConfig[metadata.collateralAddress];
-
-        return IEngine(i_nftEngine).generateWithMeta(
+        return IEngine(metadata.engine).generateWithMeta(
             tokenId,
             metadata.base,
             collateralTokenConfig.pair,
@@ -256,24 +288,25 @@ contract PlanetNFT is ERC721, VRFConsumerBaseV2Plus {
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         RequestParams memory requestParams = s_vrfRequestIdToRequestParams[requestId];
         if (requestParams.sender == address(0)) {
-            revert PlanetNFT__InvalidVrfRequest(requestId);
+            revert AnchoredNFT__InvalidVrfRequest(requestId);
         }
 
         delete s_vrfRequestIdToRequestParams[requestId];
 
         bool hasDeposit = IVault(i_vault).hasDeposit(requestParams.tokenId, requestParams.collateralTokenAddress);
         if (!hasDeposit) {
-            revert PlanetNFT__NoCollateralForToken();
+            revert AnchoredNFT__NoCollateralForToken();
         }
 
         s_tokenIdToMetadata[requestParams.tokenId] = TokenMetadata({
+            engine: requestParams.engine,
             base: Strings.toString(randomWords[0] % 360),
             collateralAddress: requestParams.collateralTokenAddress
         });
 
         _safeMint(requestParams.sender, requestParams.tokenId);
         IVault(i_vault).markMinted(requestParams.tokenId, requestParams.collateralTokenAddress);
-        emit PlanetMinted(requestId, requestParams.tokenId, requestParams.sender);
+        emit NFTMinted(requestId, requestParams.tokenId, requestParams.sender);
     }
 
     /////////////////////////////////

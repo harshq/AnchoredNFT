@@ -54,8 +54,8 @@ contract HelperConfig is Script {
             return s_anvilChainConfig;
         }
 
-        WBTCMock wbtc;
         WETHMock weth;
+        WBTCMock wbtc;
         USDTMock usdt;
         MockLinkToken linkToken;
         VRFCoordinatorV2_5Mock vrfCoordinator;
