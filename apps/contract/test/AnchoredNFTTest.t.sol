@@ -3,16 +3,16 @@ pragma solidity 0.8.29;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Test} from "forge-std/Test.sol";
-import {PlanetNFT} from "src/PlanetNFT.sol";
-import {NFTEngine} from "src/NFTEngine.sol";
+import {AnchoredNFT} from "src/AnchoredNFT.sol";
+import {PlanetEngineV1} from "src/PlanetEngineV1.sol";
 import {Vault} from "src/Vault.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {Deployer} from "script/Deployer.s.sol";
 import {Config} from "script/HelperConfig.s.sol";
 
 contract PlanetNFTTest is Test {
-    PlanetNFT nft;
-    NFTEngine engine;
+    AnchoredNFT nft;
+    PlanetEngineV1 engine;
     NFTMarketplace marketplace;
     Config config;
     Deployer deployer;

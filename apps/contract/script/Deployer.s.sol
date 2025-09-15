@@ -4,19 +4,19 @@ pragma solidity ^0.8.29;
 import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig, Config} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
-import {PlanetNFT} from "src/PlanetNFT.sol";
+import {AnchoredNFT} from "src/AnchoredNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
-import {NFTEngine} from "src/NFTEngine.sol";
+import {PlanetEngineV1} from "src/PlanetEngineV1.sol";
 import {VRFConfig, CollateralConfig} from "src/IEngine.sol";
 import {Vault} from "src/Vault.sol";
 
 contract Deployer is Script {
-    function run() public returns (PlanetNFT, NFTEngine, NFTMarketplace, Vault, Config memory) {
+    function run() public returns (AnchoredNFT, PlanetEngineV1, NFTMarketplace, Vault, Config memory) {
         HelperConfig helperConfig = new HelperConfig();
         Config memory config = helperConfig.getConfig();
         VRFInteractions vrfInteractions = new VRFInteractions();
-        NFTEngine engine;
-        PlanetNFT planetNFT;
+        PlanetEngineV1 engine;
+        AnchoredNFT anchoredNFT;
         NFTMarketplace marketplace;
         Vault vault;
 
@@ -30,9 +30,9 @@ contract Deployer is Script {
 
         vault = new Vault(config.collateralTokens);
         // deploy engine
-        engine = new NFTEngine();
+        engine = new PlanetEngineV1();
         // deploy NFT contract
-        planetNFT = new PlanetNFT(
+        anchoredNFT = new AnchoredNFT(
             address(vault),
             address(engine),
             VRFConfig({
@@ -49,17 +49,17 @@ contract Deployer is Script {
             })
         );
         // transfer vault ownership to NFT contract
-        vault.transferOwnership(address(planetNFT));
+        vault.transferOwnership(address(anchoredNFT));
 
         // transfer engine ownership to NFT contract
-        engine.transferOwnership(address(planetNFT));
+        engine.transferOwnership(address(anchoredNFT));
 
         // deploy marketplace with accepted token
         marketplace = new NFTMarketplace(config.paymentToken);
         vm.stopBroadcast();
 
         // add consumer for VRF
-        vrfInteractions.addConsumer(config, address(planetNFT));
-        return (planetNFT, engine, marketplace, vault, config);
+        vrfInteractions.addConsumer(config, address(anchoredNFT));
+        return (anchoredNFT, engine, marketplace, vault, config);
     }
 }

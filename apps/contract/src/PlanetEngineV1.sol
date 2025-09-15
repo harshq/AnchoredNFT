@@ -8,9 +8,9 @@ import {Constants} from "src/Constants.sol";
 import {UniswapCalculations} from "src/UniswapCalculations.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTEngine is Ownable {
-    error NFTEngine__PricefeedPairsHaveDifferentLengths();
-    error NFTEngine__UnsupportedPricefeedPair();
+contract PlanetEngineV1 is Ownable {
+    error PlanetEngineV1__PricefeedPairsHaveDifferentLengths();
+    error PlanetEngineV1__UnsupportedPricefeedPair();
 
     constructor() Ownable(msg.sender) {}
 
@@ -110,5 +110,9 @@ contract NFTEngine is Ownable {
                 )
             )
         );
+    }
+
+    function description() external pure returns (string memory) {
+        return "A procedurally generated planet that changes color with each glance.";
     }
 }

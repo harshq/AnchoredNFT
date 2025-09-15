@@ -44,4 +44,6 @@ interface IEngine {
         address collateralPool,
         uint256 collateralAmount
     ) external pure returns (string memory);
+
+    function description() external pure returns (string memory);
 }
