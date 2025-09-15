@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
+import {IEngine} from "src/IEngine.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {FixedPointString} from "src/FixedPointString.sol";
 import {SVGParts} from "src/SVGParts.sol";
@@ -8,7 +9,7 @@ import {Constants} from "src/Constants.sol";
 import {UniswapCalculations} from "src/UniswapCalculations.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PlanetEngineV1 is Ownable {
+contract PlanetEngineV1 is IEngine, Ownable {
     error PlanetEngineV1__PricefeedPairsHaveDifferentLengths();
     error PlanetEngineV1__UnsupportedPricefeedPair();
 
@@ -110,6 +111,10 @@ contract PlanetEngineV1 is Ownable {
                 )
             )
         );
+    }
+
+    function name() external pure returns (string memory) {
+        return "PlanetEngineV1";
     }
 
     function description() external pure returns (string memory) {

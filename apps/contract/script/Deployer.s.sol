@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
 
-import {Script, console} from "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
 import {HelperConfig, Config} from "script/HelperConfig.s.sol";
 import {VRFInteractions} from "script/VRFInteractions.s.sol";
 import {AnchoredNFT} from "src/AnchoredNFT.sol";
 import {NFTMarketplace} from "src/NFTMarketplace.sol";
 import {PlanetEngineV1} from "src/PlanetEngineV1.sol";
-import {VRFConfig, CollateralConfig} from "src/IEngine.sol";
+import {VRFConfig, CollateralConfig} from "src/Structs.sol";
 import {Vault} from "src/Vault.sol";
 
 contract Deployer is Script {
@@ -34,7 +34,6 @@ contract Deployer is Script {
         // deploy NFT contract
         anchoredNFT = new AnchoredNFT(
             address(vault),
-            address(engine),
             VRFConfig({
                 vrfCoordinator: config.vrfCoordinator,
                 vrfCoordinatorSubId: config.vrfCoordinatorSubId,
@@ -48,6 +47,9 @@ contract Deployer is Script {
                 pools: config.collateralUniswapV3Pools
             })
         );
+        // add engine
+        anchoredNFT.addEngine(address(engine));
+
         // transfer vault ownership to NFT contract
         vault.transferOwnership(address(anchoredNFT));
 

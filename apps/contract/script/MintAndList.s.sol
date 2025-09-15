@@ -17,13 +17,14 @@ contract MintAndList is Script {
     address nftAddress = DevOpsTools.get_most_recent_deployment("AnchoredNFT", block.chainid);
     address coordinator = DevOpsTools.get_most_recent_deployment("VRFCoordinatorV2_5Mock", block.chainid);
     address marketplaceAddress = DevOpsTools.get_most_recent_deployment("NFTMarketplace", block.chainid);
+    address planetEngineV1 = DevOpsTools.get_most_recent_deployment("PlanetEngineV1", block.chainid);
 
     function run() external {
         vm.startBroadcast(Constants.ANVIL_DEFAULT_ACCOUNT);
 
+        // TOKEN CREATION
         IERC20(weth).approve(vault, 1e18);
-
-        uint256 requestId = AnchoredNFT(nftAddress).create(weth, 1e18);
+        uint256 requestId = AnchoredNFT(nftAddress).create(planetEngineV1, weth, 1e18);
         vm.stopBroadcast();
 
         uint256[] memory randomWords = new uint256[](uint256(Constants.VRF_RANDOM_WORDS_COUNT));
@@ -49,6 +50,7 @@ contract MintAndList is Script {
 
         vm.startBroadcast(Constants.ANVIL_DEFAULT_ACCOUNT);
 
+        // TOKEN LISTING
         AnchoredNFT(nftAddress).approve(marketplaceAddress, tokenId);
         NFTMarketplace(marketplaceAddress).listItem(nftAddress, tokenId, 1e6);
 
