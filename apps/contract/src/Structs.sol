@@ -41,3 +41,10 @@ struct VRFConfig {
     bytes32 vrfKeyHash;
     uint32 vrfGasLimit;
 }
+
+struct CollateralPosition {
+    uint256 amount;
+    bool minted;
+    address depositor;
+    uint256 timestamp;
+}

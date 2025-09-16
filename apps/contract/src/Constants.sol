@@ -6,6 +6,7 @@ library Constants {
     uint8 public constant DECIMALS = 18;
     uint256 public constant PRECISION_FACTOR = 10 ** DECIMALS;
     uint256 public constant PRICE_CHANGE_DURATION = 60 * 60; // 1 hour in seconds
+    uint256 public constant VAULT_REFUND_LOCK = 30 minutes;
     // anvil config
     address public constant ANVIL_DEFAULT_ACCOUNT = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     // VRF config
