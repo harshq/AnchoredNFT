@@ -21,9 +21,52 @@ import {IEngine} from "src/IEngine.sol";
 /**
  * @title AnchoredNFT
  * @author Harshana Abeyaratne
+ * @notice This contract implements a collateral-backed NFT system where NFTs (Anchored) are minted
+ *         against user deposits of supported collateral tokens. Each NFT is procedurally generated
+ *         by an external engine and anchored to its collateral value.
  *
+ * @dev
+ * - Integrates with Chainlink VRF v2+ for on-chain randomness used in NFT generation.
+ * - Supports multiple pluggable engines (IEngine) for flexible NFT rendering and metadata logic.
+ * - Uses a Vault contract (IVault) to manage collateral deposits, withdrawals, and refunding.
+ * - Metadata (name, description, attributes) is constructed fully on-chain and returned as a
+ *   Base64-encoded JSON data URI. SVG images are also generated and embedded in metadata.
+ * - Owner (deployer) can add new engines and toggle engine availability via onlyOwner functions.
+ *
+ * Key Features:
+ * - Collateral-backed NFTs: Each NFT is tied to collateral held in the Vault.
+ * - Randomized generation: NFT metadata is seeded with Chainlink VRF randomness.
+ * - Engine modularity: New engines can be deployed and plugged into the system.
+ * - On-chain metadata & images: OpenSea and wallets can render NFTs directly from on-chain data.
+ *
+ * Errors:
+ * - AnchoredNFT__InvalidVrfRequest: VRF request does not exist or was already fulfilled.
+ * - AnchoredNFT__NeedAtleastOnePricefeedPair: Deployment must configure at least one price feed pair.
+ * - AnchoredNFT__UnsupportedCollateralToken: Provided collateral is not supported by the system.
+ * - AnchoredNFT__CollateralAmountMustBeMoreThanZero: Prevents zero-collateral mints.
+ * - AnchoredNFT__CollateralConfigLengthMismatch: Input config arrays mismatch in length.
+ * - AnchoredNFT__CollateralTransferFailed: Collateral transfer to Vault failed.
+ * - AnchoredNFT__CallerMustBeTheOwner: Action restricted to the token/NFT owner.
+ * - AnchoredNFT__NoCollateralForToken: No collateral associated with a given tokenId.
+ * - AnchoredNFT__EngineNotFound: Provided engine is not registered in the system.
+ * - AnchoredNFT__EngineNotAvailable: Provided engine exists but is currently paused.
+ *
+ * Events:
+ * - NFTRequested: Emitted when a VRF request is initiated for a new NFT mint.
+ * - NFTMinted: Emitted when a new NFT is successfully minted.
+ * - NFTDestroyed: Emitted when an NFT is burned and collateral withdrawn.
+ * - EngineAdded: Emitted when a new engine is added by the owner.
+ * - EngineStateChanged: Emitted when an engine is paused or resumed.
+ *
+ * Security Considerations:
+ * - Collateral is managed by a Vault contract, not stored directly in this contract.
+ * - If Chainlink VRF fails or stalls, collateral may be locked until refund logic is triggered.
+ * - Only the contract owner can manage engines, but collateral-related functions are permissionless.
  */
 contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
+    /////////////////////////////
+    ///        ERRORS         ///
+    /////////////////////////////
     error AnchoredNFT__InvalidVrfRequest(uint256 requestId);
     error AnchoredNFT__NeedAtleastOnePricefeedPair();
     error AnchoredNFT__UnsupportedCollateralToken(address token);
@@ -45,7 +88,7 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
     event NFTMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter);
     event NFTDestroyed(uint256 indexed tokenId, address indexed owner);
     event EngineAdded(address indexed engine);
-    event EngineStateChanged(bool indexed newState);
+    event EngineStateChanged(address indexed engine, bool indexed newState);
 
     ////////////////////////////
     ///        STATE         ///
@@ -97,6 +140,11 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
     ///    EXTERNAL FUNCTIONS     ///
     /////////////////////////////////
 
+    /**
+     * Configures the protocol to use a new engine
+     *
+     * @param engine address of the engine
+     */
     function addEngine(address engine) external onlyOwner {
         s_engines.push(engine);
         i_engineToConfig[engine] = EngineConfig({engine: engine, addedOn: block.timestamp, paused: false});
@@ -104,11 +152,16 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
         emit EngineAdded(engine);
     }
 
+    /**
+     * Pause/Resume engine
+     *
+     * @param engine address of the engine
+     */
     function toggleEngine(address engine) external onlyOwner {
         bool state = i_engineToConfig[engine].paused;
         i_engineToConfig[engine].paused = !state;
 
-        emit EngineStateChanged(!state);
+        emit EngineStateChanged(engine, !state);
     }
 
     /**
@@ -274,6 +327,7 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
     /**
      * BaseURI of the NFTs. We have the encoding
      * since our NFTs are Base64 encoded.
+     *
      */
     function _baseURI() internal pure override returns (string memory) {
         return "data:application/json;base64,";
@@ -283,7 +337,7 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
      * Chainlink VRF fulfillRandomWords
      *
      * @param requestId request id of the fulfilled request
-     * @param randomWords random words
+     * @param randomWords random words from VRF
      */
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         RequestParams memory requestParams = s_vrfRequestIdToRequestParams[requestId];
