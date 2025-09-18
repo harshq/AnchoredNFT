@@ -12,7 +12,7 @@ import {
 } from "./config.js";
 
 import VRFCoordinatorABI from "@planet/abi/VRFCoordinatorV2_5Mock" with { type: "json" };
-import PlanetNFTABI from "@planet/abi/PlanetNFT" with { type: "json" };
+import AnchoredNFTABI from "@planet/abi/AnchoredNFT" with { type: "json" };
 
 async function main() {
   const provider = new JsonRpcProvider("http://localhost:8545");
@@ -24,35 +24,44 @@ async function main() {
     wallet
   );
 
-  const nft = new ethers.Contract(NFT_ADDRESS, PlanetNFTABI, wallet);
+  const nft = new ethers.Contract(NFT_ADDRESS, AnchoredNFTABI, wallet);
 
   console.log("👀 Listening for contract events");
-  nft.on("PlanetRequested", async (requestId: BigNumberish, minter: string) => {
-    console.log(
-      `📡 PlanetRequested: Detected request #${requestId.toString()} from ${minter}`
-    );
-
-    const rand1 = BigInt(keccak256(randomBytes(32)));
-    const rand2 = BigInt(keccak256(randomBytes(32)));
-    try {
-      const tx = await vrf.fulfillRandomWordsWithOverride(
-        requestId,
-        NFT_ADDRESS,
-        [rand1, rand2]
-      );
-      await tx.wait();
+  nft.on(
+    "NFTRequested",
+    async (
+      requestId: BigNumberish,
+      tokenId: BigNumberish,
+      _: any,
+      __: any,
+      minter: string
+    ) => {
       console.log(
-        `📡 PlanetRequested: Fulfilled ${requestId} with ${rand1.toString()} | ${rand1.toString()}`
+        `📡 NFTRequested: Detected request #${requestId.toString()} for ${tokenId.toString()} from ${minter}`
       );
-    } catch (err) {
-      console.error("📡 PlanetRequested: Fulfillment failed:", err);
+
+      const rand1 = BigInt(keccak256(randomBytes(32)));
+      const rand2 = BigInt(keccak256(randomBytes(32)));
+      try {
+        const tx = await vrf.fulfillRandomWordsWithOverride(
+          requestId,
+          NFT_ADDRESS,
+          [rand1, rand2]
+        );
+        await tx.wait();
+        console.log(
+          `📡 NFTRequested: Fulfilled ${requestId} with ${rand1.toString()} | ${rand1.toString()}`
+        );
+      } catch (err) {
+        console.error("📡 NFTRequested: Fulfillment failed:", err);
+      }
     }
-  });
+  );
 
   nft.on(
-    "PlanetMinted",
-    async (requestId: BigNumberish, minter: string, tokenId: BigNumberish) => {
-      console.log(`⚡️ PlanetMinted: Minted token ${tokenId} for ${minter}`);
+    "NFTMinted",
+    async (requestId: BigNumberish, tokenId: BigNumberish, minter: string) => {
+      console.log(`⚡️ NFTMinted: Minted token ${tokenId} for ${minter}`);
     }
   );
 

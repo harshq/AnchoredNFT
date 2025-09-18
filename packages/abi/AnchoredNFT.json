@@ -3,34 +3,63 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "nftEngine",
+        "name": "vault",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "vrfCoordinator",
-        "type": "address",
-        "internalType": "address"
+        "name": "vrfConfig",
+        "type": "tuple",
+        "internalType": "struct VRFConfig",
+        "components": [
+          {
+            "name": "vrfCoordinator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vrfCoordinatorSubId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "vrfKeyHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "vrfGasLimit",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
       },
       {
-        "name": "vrfCoordinatorSubId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "vrfKeyHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "vrfGasLimit",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "pricefeedPairs",
-        "type": "string[]",
-        "internalType": "string[]"
+        "name": "collateralConfig",
+        "type": "tuple",
+        "internalType": "struct CollateralConfig",
+        "components": [
+          {
+            "name": "pairs",
+            "type": "string[]",
+            "internalType": "string[]"
+          },
+          {
+            "name": "bases",
+            "type": "address[]",
+            "internalType": "address[]"
+          },
+          {
+            "name": "tokens",
+            "type": "address[]",
+            "internalType": "address[]"
+          },
+          {
+            "name": "pools",
+            "type": "address[]",
+            "internalType": "address[]"
+          }
+        ]
       }
     ],
     "stateMutability": "nonpayable"
@@ -39,6 +68,19 @@
     "type": "function",
     "name": "acceptOwnership",
     "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "addEngine",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -81,7 +123,7 @@
   },
   {
     "type": "function",
-    "name": "generateSVGForTokenId",
+    "name": "balanceOf",
     "inputs": [
       {
         "name": "tokenId",
@@ -91,12 +133,64 @@
     ],
     "outputs": [
       {
-        "name": "svg",
-        "type": "string",
-        "internalType": "string"
+        "name": "collaterals",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "amounts",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "create",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "collateralTokenAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "collateralAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "vrfRequestId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "destroy",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "collateralTokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -199,6 +293,24 @@
         "name": "randomWords",
         "type": "uint256[]",
         "internalType": "uint256[]"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundCollateral",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "collateralTokenAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -333,15 +445,15 @@
   },
   {
     "type": "function",
-    "name": "terraform",
-    "inputs": [],
-    "outputs": [
+    "name": "toggleEngine",
+    "inputs": [
       {
-        "name": "requestId",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "engine",
+        "type": "address",
+        "internalType": "address"
       }
     ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -356,7 +468,7 @@
     ],
     "outputs": [
       {
-        "name": "metadata",
+        "name": "",
         "type": "string",
         "internalType": "string"
       }
@@ -464,6 +576,119 @@
   },
   {
     "type": "event",
+    "name": "EngineAdded",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EngineStateChanged",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newState",
+        "type": "bool",
+        "indexed": true,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NFTDestroyed",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NFTMinted",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "minter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NFTRequested",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "collateralTokenAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "collateralAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "minter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "OwnershipTransferRequested",
     "inputs": [
       {
@@ -502,50 +727,6 @@
   },
   {
     "type": "event",
-    "name": "PlanetMinted",
-    "inputs": [
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "tokenId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "PlanetRequested",
-    "inputs": [
-      {
-        "name": "requestId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "minter",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "Transfer",
     "inputs": [
       {
@@ -568,6 +749,80 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__CallerMustBeTheOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__CollateralAmountMustBeMoreThanZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__CollateralConfigLengthMismatch",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__CollateralTransferFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__EngineNotAvailable",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__EngineNotFound",
+    "inputs": [
+      {
+        "name": "engine",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__InvalidVrfRequest",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__NeedAtleastOnePricefeedPair",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__NoCollateralForToken",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AnchoredNFT__UnsupportedCollateralToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -711,19 +966,19 @@
   },
   {
     "type": "error",
-    "name": "PlanetNFT__InvalidVrfRequest",
+    "name": "StringsInsufficientHexLength",
     "inputs": [
       {
-        "name": "requestId",
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "length",
         "type": "uint256",
         "internalType": "uint256"
       }
     ]
-  },
-  {
-    "type": "error",
-    "name": "PlanetNFT__NeedAtleastOnePricefeedPair",
-    "inputs": []
   },
   {
     "type": "error",

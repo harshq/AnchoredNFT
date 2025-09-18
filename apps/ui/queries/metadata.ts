@@ -1,7 +1,7 @@
 import { Address } from "viem";
 import { readContract } from "@wagmi/core";
 
-import abi from "@planet/abi/PlanetNFT";
+import abi from "@planet/abi/AnchoredNFT";
 import { config } from "@/configs/rainbowkit";
 import { decodeBase64ToJson } from "@/utils/base64Helper";
 import { Metadata } from "@/types/metadata";
