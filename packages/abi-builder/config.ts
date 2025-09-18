@@ -2,6 +2,6 @@ export const contractsToExtract = [
   "IERC20",
   "IERC721",
   "NFTMarketplace",
-  "PlanetNFT",
+  "AnchoredNFT",
   "VRFCoordinatorV2_5Mock",
 ];
