@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "imageUrl": "/recent-mints/recent-1.webp",
+      "name": "AnchoredNFT #122",
+      "collection": "NovaMint",
+      "lockedValue": "0.3ETH",
+      "syncedPair": "ETH/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "imageUrl": "/recent-mints/recent-2.webp",
+      "name": "AnchoredNFT #125",
+      "collection": "NovaMint",
+      "lockedValue": "0.004BTC",
+      "syncedPair": "BTC/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "imageUrl": "/recent-mints/recent-3.webp",
+      "name": "AnchoredNFT #126",
+      "collection": "Pixel Nomads 2.0",
+      "lockedValue": "0.53ETH",
+      "syncedPair": "ETH/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "imageUrl": "/recent-mints/recent-4.webp",
+      "name": "AnchoredNFT #132",
+      "collection": "MysticBytes",
+      "lockedValue": "0.01BTC",
+      "syncedPair": "BTC/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "imageUrl": "/recent-mints/recent-5.webp",
+      "name": "AnchoredNFT #66",
+      "collection": "Quantum Doodles V2",
+      "lockedValue": "0.3ETH",
+      "syncedPair": "ETH/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "imageUrl": "/recent-mints/recent-6.webp",
+      "name": "AnchoredNFT #69",
+      "collection": "Quantum Doodles V2",
+      "lockedValue": "0.004BTC",
+      "syncedPair": "BTC/USD",
+      "owner": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    }
+  ]
+}

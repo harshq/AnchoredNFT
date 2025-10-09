@@ -37,20 +37,23 @@ async function main() {
       minter: string
     ) => {
       console.log(
-        `📡 NFTRequested: Detected request #${requestId.toString()} for ${tokenId.toString()} from ${minter}`
+        `📡 NFTRequested: Detected request #${requestId.toString()} for token${tokenId.toString()} from ${minter}`
       );
 
       const rand1 = BigInt(keccak256(randomBytes(32)));
-      const rand2 = BigInt(keccak256(randomBytes(32)));
+      // const rand2 = BigInt(keccak256(randomBytes(32)));
       try {
         const tx = await vrf.fulfillRandomWordsWithOverride(
           requestId,
           NFT_ADDRESS,
-          [rand1, rand2]
+          [
+            rand1,
+            // rand2
+          ]
         );
         await tx.wait();
         console.log(
-          `📡 NFTRequested: Fulfilled ${requestId} with ${rand1.toString()} | ${rand1.toString()}`
+          `📡 NFTRequested: Fulfilled ${requestId} with ${rand1.toString()}}`
         );
       } catch (err) {
         console.error("📡 NFTRequested: Fulfillment failed:", err);

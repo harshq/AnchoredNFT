@@ -15,7 +15,7 @@ interface IVault {
     function balanceOf(uint256 tokenId)
         external
         view
-        returns (address[] memory collaterals, uint256[] memory amounts);
+        returns (address[] memory collaterals, uint256[] memory amounts, uint256[] memory decimals);
 
     function hasDeposit(uint256 tokenId, address collateralTokenAddress) external view returns (bool);
 }

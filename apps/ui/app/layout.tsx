@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-// import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Russo_One } from "next/font/google";
 import Providers from "../providers/wagmi"
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
 
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
+const russoOne = Russo_One({
+  variable: "--font-russo-regular",
+  subsets: ["latin"],
+  weight: ["400"]
+});
 
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"]
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -27,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-      // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${russoOne.variable} ${inter.variable} antialiased`}
       >
         <Providers>
           {children}
