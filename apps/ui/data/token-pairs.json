@@ -1,0 +1,36 @@
+{
+  "data": [
+    {
+      "id": "1",
+      "name": "ETH/USD",
+      "token1": {
+        "symbol": "ETH",
+        "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        "name": "Wrapped Ethereum",
+        "decimals": 18
+      },
+      "token2": {
+        "symbol": "USDT",
+        "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "name": "USDT",
+        "decimals": 6
+      }
+    },
+    {
+      "id": "2",
+      "name": "BTC/USD",
+      "token1": {
+        "symbol": "BTC",
+        "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "name": "Wrapped Bitcoin",
+        "decimals": 8
+      },
+      "token2": {
+        "symbol": "USDT",
+        "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "name": "USDT",
+        "decimals": 6
+      }
+    }
+  ]
+}

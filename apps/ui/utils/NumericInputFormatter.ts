@@ -1,11 +1,12 @@
-export const PRECISION = 6;
+import { SYSTEM_DECIMALS } from "@/constants/base";
 
+// @depricated
 export const sanatiseNumberInput = (
   value: string,
-  withDecimals: boolean = true
+  withDecimals: boolean = true,
+  precision: number = SYSTEM_DECIMALS
 ) => {
-  const raw = value.replace(/,/g, "");
-  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const cleaned = value.replace(/[^0-9.]/g, "");
   const [integerRaw, decimalRaw] = cleaned.split(".");
   const integer = integerRaw.replace(/^0+(?!$)/, "") || "";
 
@@ -17,7 +18,7 @@ export const sanatiseNumberInput = (
     return integer;
   }
 
-  const decimal = decimalRaw.replace(/[^0-9]/g, "").slice(0, PRECISION);
+  const decimal = decimalRaw.replace(/[^0-9]/g, "").slice(0, precision);
   return `${integer}.${decimal}`;
 };
 

@@ -6,6 +6,6 @@
   "author": "",
   "type": "module",
   "scripts": {
-    "dev": "go run cmd/main/main.go"
+    "dev-run": "go run cmd/main/main.go"
   }
 }

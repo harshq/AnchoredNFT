@@ -187,17 +187,19 @@ contract Vault is Ownable, ReentrancyGuard {
         external
         view
         onlyOwner
-        returns (address[] memory collaterals, uint256[] memory amounts)
+        returns (address[] memory collaterals, uint256[] memory amounts, uint256[] memory decimals)
     {
         uint256 n = s_supportedCollaterals.length;
         collaterals = new address[](n);
         amounts = new uint256[](n);
+        decimals = new uint256[](n);
 
         uint256 count = 0;
         for (uint256 i = 0; i < s_supportedCollaterals.length; i++) {
             if (s_tokenIdToCollateral[tokenId][s_supportedCollaterals[i]].minted) {
                 collaterals[count] = s_supportedCollaterals[i];
                 amounts[count] = s_tokenIdToCollateral[tokenId][s_supportedCollaterals[i]].amount;
+                decimals[count] = IERC20Metadata(s_supportedCollaterals[i]).decimals();
                 count++;
             }
         }
@@ -206,6 +208,7 @@ contract Vault is Ownable, ReentrancyGuard {
         assembly {
             mstore(collaterals, count)
             mstore(amounts, count)
+            mstore(decimals, count)
         }
     }
 

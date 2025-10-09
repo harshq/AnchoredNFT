@@ -48,12 +48,12 @@ contract MintAndList is Script {
             }
         }
 
-        vm.startBroadcast(Constants.ANVIL_DEFAULT_ACCOUNT);
+        // vm.startBroadcast(Constants.ANVIL_DEFAULT_ACCOUNT);
 
-        // TOKEN LISTING
-        AnchoredNFT(nftAddress).approve(marketplaceAddress, tokenId);
-        NFTMarketplace(marketplaceAddress).listItem(nftAddress, tokenId, 1e6);
+        // // TOKEN LISTING
+        // AnchoredNFT(nftAddress).approve(marketplaceAddress, tokenId);
+        // NFTMarketplace(marketplaceAddress).listItem(nftAddress, tokenId, 1e6);
 
-        vm.stopBroadcast();
+        // vm.stopBroadcast();
     }
 }

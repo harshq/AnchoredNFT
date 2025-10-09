@@ -17,6 +17,7 @@ import {
     CollateralConfig
 } from "src/Structs.sol";
 import {IEngine} from "src/IEngine.sol";
+import {PrecisionScaler} from "src/PrecisionScaler.sol";
 
 /**
  * @title AnchoredNFT
@@ -229,7 +230,7 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
     function balanceOf(uint256 tokenId)
         external
         view
-        returns (address[] memory collaterals, uint256[] memory amounts)
+        returns (address[] memory collaterals, uint256[] memory amounts, uint256[] memory decimals)
     {
         return IVault(i_vault).balanceOf(tokenId);
     }
@@ -248,7 +249,8 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
         _requireOwned(tokenId);
 
         TokenMetadata memory metadata = s_tokenIdToMetadata[tokenId];
-        (address[] memory collaterals, uint256[] memory amounts) = IVault(i_vault).balanceOf(tokenId);
+        (address[] memory collaterals, uint256[] memory amounts, uint256[] memory decimals) =
+            IVault(i_vault).balanceOf(tokenId);
 
         string memory svg = generateSVGForTokenId(tokenId, metadata, collaterals[0], amounts[0]);
         string memory imageUri = svgToImageURI(svg);
@@ -276,7 +278,9 @@ contract AnchoredNFT is ERC721, VRFConsumerBaseV2Plus {
                         '"},{"trait_type":"Collateral Token", "value":"',
                         Strings.toHexString(collaterals[0]),
                         '"},{"trait_type":"Collateral Amount", "value":"',
-                        Strings.toString(amounts[0]),
+                        Strings.toString(
+                            PrecisionScaler.normalizeToPrecision(amounts[0], Constants.DECIMALS, decimals[0])
+                        ),
                         '"}]}'
                     )
                 )
