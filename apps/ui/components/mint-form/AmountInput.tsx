@@ -13,7 +13,7 @@ export default function AmountInput({ value, onChange, decimals, ...props }: Pro
             autoFocus
             {...props}
             className="text-5xl w-full text-right border-none outline-none"
-            placeholder="0.00"
+            placeholder={`0.00`}
             value={formatNumberWithCommas(value as string)}
             onChange={(e) => {
                 const safeValue = sanatiseNumberInput(e.target.value, true, decimals);

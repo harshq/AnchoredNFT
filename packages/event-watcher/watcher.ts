@@ -11,8 +11,8 @@ import {
   DEFAULT_ANVIL_PRIVATE_KEY,
 } from "./config.js";
 
-import VRFCoordinatorABI from "@planet/abi/VRFCoordinatorV2_5Mock" with { type: "json" };
-import AnchoredNFTABI from "@planet/abi/AnchoredNFT" with { type: "json" };
+import VRFCoordinatorABI from "@anchored/abi/VRFCoordinatorV2_5Mock" with { type: "json" };
+import AnchoredNFTABI from "@anchored/abi/AnchoredNFT" with { type: "json" };
 
 async function main() {
   const provider = new JsonRpcProvider("http://localhost:8545");

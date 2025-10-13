@@ -10,7 +10,7 @@ export default {
     collateralDecimals: z.number().optional(),
   }),
   "3": z.object({
-    collateralAmount: z.string().min(1, "Invalid amount"),
+    collateralAmount: z.string().min(1, "Please check the amount"),
   }),
   "4": z.object({}),
   "5": z.object({}),

@@ -8,7 +8,7 @@ import {
 import { Address, Log, parseEventLogs } from "viem";
 import { config } from "@/configs/rainbowkit";
 
-import anchoredNFTAbi from "@planet/abi/AnchoredNFT";
+import anchoredNFTAbi from "@anchored/abi/AnchoredNFT";
 import React from "react";
 
 export default function useAnchoredContract() {

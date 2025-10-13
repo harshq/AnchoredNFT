@@ -9,7 +9,7 @@ import { Loader } from "lucide-react";
 
 import approvalAnimation from "@/public/animations/approval-animation.json";
 import runAnimation from "@/public/animations/run-animation.json";
-import confetti from "@/public/animations/confetti.json";
+
 import { zodResolver } from "@/utils/ZodResolver";
 import engines from "@/data/engines.json";
 import pairs from "@/data/token-pairs.json";
@@ -25,8 +25,10 @@ import PairChoiceItem from "./PairChoiceItem";
 import RecentMintCard from "../recent-mint-card";
 
 import AmountInput from "./AmountInput";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance, useReadContract } from "wagmi";
 import { decodeBase64ToJson } from "@/utils/base64Helper";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import SuccessAnimation from "./SuccessAnimation";
 
 type Step1Schema = z.infer<typeof schema["1"]>;
 type Step2Schema = z.infer<typeof schema["2"]>;
@@ -65,7 +67,8 @@ type FormState = typeof FORMSTATE[keyof typeof FORMSTATE]
 
 export default function MintForm() {
     const account = useAccount();
-    const { approveFunds } = useERC20();
+    const { openConnectModal } = useConnectModal();
+    const { approveFunds, checkbalance } = useERC20();
     const { getTokenUri, create, parseLogs, listenToEvent } = useAnchoredContract();
 
     const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -87,15 +90,22 @@ export default function MintForm() {
     });
 
     const form = useForm<FormData>({
-        mode: "all",
+        mode: "onSubmit",
         resolver: zodResolver(schema[step]) as Resolver<FormData>,
     })
 
     React.useEffect(() => {
-        form.reset(formData);
+        form.reset(formData, {
+            keepErrors: true
+        });
     }, [step]);
 
     const handleSubmit = async (values: FormValues) => {
+        if (!account.isConnected) {
+            openConnectModal!();
+            return;
+        }
+
         setFormState(FORMSTATE.IN_PROGRESS);
         setFormData((prev) => ({ ...prev, ...values }));
         setIsSubmitting(true);
@@ -105,10 +115,19 @@ export default function MintForm() {
         else if (step === 2) setStep(3);
         else if (step === 3 || step === 4) {
             if (step === 3) setStep(4);
-
             // Final submit action
             const data = { ...formData, ...values };
             const amount = parseUnits(data.collateralAmount!, data.collateralDecimals!)
+            const balance = await checkbalance(data.collateralAddress!, account.address as string)
+
+            if (balance <= amount) {
+                form.setError("collateralAmount", {
+                    message: "Connected account balance is insufficient"
+                })
+                setStep(3);
+                setIsSubmitting(false);
+                return;
+            }
 
 
             // 1. Get the approval for funds
@@ -172,7 +191,7 @@ export default function MintForm() {
     }
 
 
-    const renderSubmitButton = (step: Step, isSubmitting: boolean, formState: FormState) => {
+    const renderSubmitButton = (step: Step, disabled: boolean, formState: FormState) => {
         let buttonText: React.ReactNode
         if (step === 4 || step === 5) {
             buttonText = formState === FORMSTATE.FAILED ? 'Retry' : <Loader className="animate-spin" />
@@ -185,7 +204,7 @@ export default function MintForm() {
         return (
             <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={disabled}
                 className="w-full bg-indigo-500 hover:bg-indigo-600 cursor-pointer font-medium"
             >
                 {buttonText}
@@ -203,7 +222,7 @@ export default function MintForm() {
 
         return (
             <>
-                <Lottie className="absolute top-0 right-0 left-0 bottom-0 z-100" animationData={confetti} loop={false} />
+                <SuccessAnimation />
                 <div className="w-80 relative">
                     <p className="text-center text-sm text-gray-400 font-medium">Here's your NFT</p>
                     <div className="mt-5 ">
@@ -221,9 +240,9 @@ export default function MintForm() {
     }
 
     return (
-        <div>
+        <div className="w-full md:w-100">
             <p className="text-center text-sm text-gray-400 font-medium">{getFormTitle(step)}</p>
-            <div className="w-100 mt-8">
+            <div className="mt-8">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)}>
                         {
@@ -283,8 +302,9 @@ export default function MintForm() {
                                                 <AmountInput {...field} decimals={form.getValues("collateralDecimals")!} />
                                             </FormControl>
                                             <div className="text-right">
-                                                <span></span>
-                                                <FormMessage />
+                                                {
+                                                    !!form.formState.errors.collateralAmount ? <FormMessage /> : <span className="text-xs text-gray-600">Enter amount upto {form.getValues("collateralDecimals")!} decimals</span>
+                                                }
                                             </div>
                                         </FormItem>
                                     )}

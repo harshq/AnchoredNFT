@@ -2,12 +2,13 @@
   "data": [
     {
       "id": 1,
-      "imageUrl": "/recent-mints/recent-1.webp",
+      "imageUrl": "/recent-mints/PlanetEngineV1/recent-3.webp",
       "name": "Planet NFT",
       "sub": "A procedurally generated planet that changes color with each glance",
       "description": "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Aperiam inventore, quisquam similique voluptas non vel illum porro suscipit expedita debitis deserunt. Dolorem minima pariatur qui eius vitae harum magnam laborum?",
       "ended": false,
-      "url": "/collections/planet-nft-v2"
+      "url": "/collections/planet-nft-v2",
+      "engine": "PlanetEngineV1"
     },
     {
       "id": 2,
@@ -16,25 +17,8 @@
       "sub": "A procedurally generated planet that changes color with each glance",
       "description": "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Aperiam inventore, quisquam similique voluptas non vel illum porro suscipit expedita debitis deserunt. Dolorem minima pariatur qui eius vitae harum magnam laborum?",
       "ended": true,
-      "url": "/collections/quantum-doodles-v2"
-    },
-    {
-      "id": 3,
-      "imageUrl": "/recent-mints/recent-7.webp",
-      "name": "NovaMint",
-      "sub": "A procedurally generated planet that changes color with each glance",
-      "description": "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Aperiam inventore, quisquam similique voluptas non vel illum porro suscipit expedita debitis deserunt. Dolorem minima pariatur qui eius vitae harum magnam laborum?",
-      "ended": true,
-      "url": "/collections/nova-mint"
-    },
-    {
-      "id": 4,
-      "imageUrl": "/recent-mints/recent-4.webp",
-      "name": "MysticBytes",
-      "sub": "A procedurally generated planet that changes color with each glance",
-      "description": "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Aperiam inventore, quisquam similique voluptas non vel illum porro suscipit expedita debitis deserunt. Dolorem minima pariatur qui eius vitae harum magnam laborum?",
-      "ended": true,
-      "url": "/collections/mystic-bytes"
+      "url": "/collections/quantum-doodles-v2",
+      "engine": "QuantumDoodlesV2"
     }
   ]
 }

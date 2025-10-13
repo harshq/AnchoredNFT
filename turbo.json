@@ -17,10 +17,10 @@
       "cache": false,
       "persistent": true,
       "with": [
-        "@planet/ui#dev",
-        "@planet/contract#dev",
-        "@planet/event-watcher#dev",
-        "@planet/api#dev"
+        "@anchored/ui#dev",
+        "@anchored/contract#dev",
+        "@anchored/event-watcher#dev",
+        "@anchored/api#dev"
       ]
     }
   }

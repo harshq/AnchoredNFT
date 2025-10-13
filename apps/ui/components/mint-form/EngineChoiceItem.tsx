@@ -37,7 +37,7 @@ export default function EngineChoiceItem({ engine, isActive, onChange }: Props) 
 
                 {engine.state === 'pending' && (
                     <>
-                        <p className="text-xs font-medium bg-amber-50 text-gray-400 absolute -rotate-45 top-8 right-23 whitespace-nowrap px-5">COMING SOON</p>
+                        {/* <p className="text-xs font-medium bg-amber-50 text-gray-400 absolute -rotate-45 top-8 right-23 whitespace-nowrap px-5">COMING SOON</p> */}
                         <div className="flex items-baseline gap-1">
                             <p className="text-sm text-gray-500">Releasing in 5 days</p>
                         </div>
