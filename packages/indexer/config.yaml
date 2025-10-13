@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: envio-indexer
+networks:
+  - id: 31337
+    rpc_config:
+      url: http://127.0.0.1:8545 #
+    start_block: 0
+    contracts:
+      - name: AnchoredNFT
+        address:
+          - 0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1
+        handler: src/EventHandlers.ts
+        events:
+          - event: Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)
+          - event: ApprovalForAll(address indexed owner, address indexed operator, bool approved)
+          - event: CoordinatorSet(address vrfCoordinator)
+          - event: EngineAdded(address indexed engine)
+          - event: EngineStateChanged(address indexed engine, bool indexed newState)
+          - event: NFTDestroyed(uint256 indexed tokenId, address indexed owner)
+          - event: NFTMinted(uint256 indexed requestId, uint256 indexed tokenId, address indexed minter)
+          - event: NFTRequested(uint256 indexed requestId, uint256 indexed tokenId, address collateralTokenAddress, uint256 collateralAmount, address indexed minter)
+          - event: OwnershipTransferRequested(address indexed from, address indexed to)
+          - event: OwnershipTransferred(address indexed from, address indexed to)
+          - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+unordered_multichain_mode: true
+preload_handlers: true

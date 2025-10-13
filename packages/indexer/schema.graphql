@@ -1,0 +1,87 @@
+type AnchoredNFT_Approval {
+  id: ID!
+  owner: String!
+  approved: String!
+  tokenId: BigInt!
+}
+
+type AnchoredNFT_ApprovalForAll {
+  id: ID!
+  owner: String!
+  operator: String!
+  approved: Boolean!
+}
+
+type AnchoredNFT_CoordinatorSet {
+  id: ID!
+  vrfCoordinator: String!
+}
+
+type AnchoredNFT_EngineAdded {
+  id: ID!
+  engine: String!
+}
+
+type AnchoredNFT_EngineStateChanged {
+  id: ID!
+  engine: String!
+  newState: Boolean!
+}
+
+type AnchoredNFT_NFTDestroyed {
+  id: ID!
+  tokenId: BigInt!
+  owner: String!
+}
+
+type Attribute {
+  id: ID!
+  engine: String!
+  pair: String!
+  collateral: String!
+  amount: String!
+}
+
+type Metadata {
+  id: ID!
+  name: String!
+  description: String!
+  image: String!
+  attributes: Attribute!
+}
+
+type AnchoredNFT_NFTMinted {
+  id: ID!
+  requestId: BigInt!
+  tokenId: BigInt!
+  minter: String!
+  metadata: Metadata!
+}
+
+type AnchoredNFT_NFTRequested {
+  id: ID!
+  requestId: BigInt!
+  tokenId: BigInt!
+  collateralTokenAddress: String!
+  collateralAmount: BigInt!
+  minter: String!
+}
+
+type AnchoredNFT_OwnershipTransferRequested {
+  id: ID!
+  from: String!
+  to: String!
+}
+
+type AnchoredNFT_OwnershipTransferred {
+  id: ID!
+  from: String!
+  to: String!
+}
+
+type AnchoredNFT_Transfer {
+  id: ID!
+  from: String!
+  to: String!
+  tokenId: BigInt!
+}

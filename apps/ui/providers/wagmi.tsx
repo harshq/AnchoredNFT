@@ -4,6 +4,7 @@ import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { isServer, QueryClientProvider, QueryClient, defaultShouldDehydrateQuery } from "@tanstack/react-query";
 import { config } from "@/configs/rainbowkit";
+import { ApolloProvider } from "./apollo"
 
 interface Props {
     children: React.ReactNode;
@@ -52,9 +53,11 @@ export default function Providers({ children }: Props) {
     return (
         <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
-                <RainbowKitProvider>
-                    {children}
-                </RainbowKitProvider>
+                <ApolloProvider >
+                    <RainbowKitProvider>
+                        {children}
+                    </RainbowKitProvider>
+                </ApolloProvider>
             </QueryClientProvider>
         </WagmiProvider>
     );

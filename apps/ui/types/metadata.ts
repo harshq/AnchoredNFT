@@ -1,4 +1,4 @@
-import { ItemListed } from "../queries/listing";
+import { ItemListed } from "../non-queries/listing";
 
 export interface Attribute {
   trait_type: string;

@@ -1,5 +1,5 @@
 {
-  "name": "@planet/contract",
+  "name": "@anchored/contract",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
