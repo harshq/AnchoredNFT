@@ -12,6 +12,7 @@ export interface Props {
     lockedValue: string
     syncedPair: string
     hideAddress?: boolean
+    cta?: React.ReactNode
 }
 
 export default function RecentMintCard({
@@ -21,10 +22,11 @@ export default function RecentMintCard({
     collection,
     lockedValue,
     syncedPair,
-    hideAddress = false
+    hideAddress = false,
+    cta
 }: Props) {
     return (
-        <div className="border-1 border-gray-600/50 bg-white/10 rounded p-1 group/card">
+        <div className="border-1 border-gray-600/50 bg-white/10 rounded p-1 group/card relative">
             <div className="aspect-square w-full relative rounded overflow-hidden ">
                 <Image className="transition-transform duration-500 ease-in-out group-hover/card:scale-110" objectFit="cover" src={imageUrl} alt="recent mint" fill />
                 {
@@ -43,6 +45,7 @@ export default function RecentMintCard({
                     <Tooltip><TooltipTrigger asChild><Badge className="bg-indigo-900 cursor-default"><ArrowLeftRight />{syncedPair}</Badge></TooltipTrigger><TooltipContent>Synced Pair</TooltipContent></Tooltip>
                 </div>
             </div>
+            {cta}
         </div>
     )
 }

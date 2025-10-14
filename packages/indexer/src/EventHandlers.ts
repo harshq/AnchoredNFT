@@ -28,23 +28,6 @@ const client = createPublicClient({
   transport: http("http://127.0.0.1:8545", { batch: true }),
 });
 
-// const attributeSchema = ;
-
-// const tokenMetadataSchema = S.object(() => ({
-//   id: S.bigint,
-//   name: S.string,
-//   description: S.string,
-//   image: S.string,
-//   // attributes: S.array(
-//   //   S.object(() => ({
-//   //     trait_type: S.string,
-//   //     value: S.string,
-//   //   }))
-//   // ),
-// }));
-
-// type TokenMetadataSchema = S.Infer<typeof tokenMetadataSchema>;
-
 const getTokenMetadata = experimental_createEffect(
   {
     name: "getMetadata",
@@ -154,9 +137,26 @@ AnchoredNFT.NFTDestroyed.handler(async ({ event, context }) => {
   };
 
   context.AnchoredNFT_NFTDestroyed.set(entity);
+
+  const token = await context.Token.get(event.params.tokenId.toString());
+  if (token) {
+    context.Token.set({
+      ...token,
+      isDeleted: true,
+    });
+  }
 });
 
 AnchoredNFT.NFTMinted.handler(async ({ event, context }) => {
+  const entity: AnchoredNFT_NFTMinted = {
+    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+    requestId: event.params.requestId,
+    tokenId: event.params.tokenId,
+    minter: event.params.minter,
+  };
+
+  context.AnchoredNFT_NFTMinted.set(entity);
+
   const metadata = await context.effect(getTokenMetadata, {
     chainId: event.chainId,
     tokenId: event.params.tokenId,
@@ -178,15 +178,15 @@ AnchoredNFT.NFTMinted.handler(async ({ event, context }) => {
     attributes_id: event.params.tokenId.toString(),
   });
 
-  const entity: AnchoredNFT_NFTMinted = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+  context.Token.set({
+    id: event.params.tokenId.toString(),
     requestId: event.params.requestId,
     tokenId: event.params.tokenId,
     minter: event.params.minter,
+    isDeleted: false,
+    owner: event.params.minter,
     metadata_id: event.params.tokenId.toString(),
-  };
-
-  context.AnchoredNFT_NFTMinted.set(entity);
+  });
 });
 
 AnchoredNFT.NFTRequested.handler(async ({ event, context }) => {

@@ -2,15 +2,20 @@ import { gql, TypedDocumentNode } from "@apollo/client";
 
 export const RECENT_MINTS: TypedDocumentNode<RecentMintsType> = gql`
   query MyQuery($engine: String!) {
-    AnchoredNFT_NFTMinted(
-      where: { metadata: { attributes: { engine: { _eq: $engine } } } }
+    Token(
+      where: {
+        isDeleted: { _eq: false }
+        metadata: { attributes: { engine: { _eq: $engine } } }
+      }
     ) {
+      id
       minter
-      requestId
+      owner
       tokenId
       metadata {
-        name
+        description
         image
+        name
         attributes {
           amount
           collateral
@@ -24,13 +29,13 @@ export const RECENT_MINTS: TypedDocumentNode<RecentMintsType> = gql`
 
 export const MY_RECENT_MINTS: TypedDocumentNode<RecentMintsType> = gql`
   query MyQuery($address: String!) {
-    AnchoredNFT_NFTMinted(where: { minter: { _eq: $address } }) {
+    Token(where: { isDeleted: { _eq: false }, minter: { _eq: $address } }) {
       id
       minter
+      owner
       tokenId
       metadata {
         description
-        id
         image
         name
         attributes {
@@ -45,7 +50,8 @@ export const MY_RECENT_MINTS: TypedDocumentNode<RecentMintsType> = gql`
 `;
 
 export type RecentMintsType = {
-  AnchoredNFT_NFTMinted: {
+  Token: {
+    owner: string;
     minter: string;
     requestId: string; // BigInt in GraphQL → string in JS
     tokenId: string; // same as above

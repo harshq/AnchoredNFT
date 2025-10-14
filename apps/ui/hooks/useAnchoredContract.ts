@@ -49,6 +49,18 @@ export default function useAnchoredContract() {
     }) as Promise<string>;
   };
 
+  const destroy = async (tokenId: string, collateral: string) => {
+    const { request } = await simulateContract(config, {
+      abi: anchoredNFTAbi,
+      functionName: "destroy",
+      address: process.env.NEXT_PUBLIC_ANCHORED_NFT_ADDRESS as Address,
+      args: [tokenId, collateral],
+    });
+
+    const hash = await writeContract(config, request);
+    return waitForTransactionReceipt(config, { hash });
+  };
+
   const listenToEvent = async (
     requestId: string,
     tokenId: string,
@@ -80,5 +92,5 @@ export default function useAnchoredContract() {
     };
   }, []);
 
-  return { getTokenUri, create, parseLogs, listenToEvent };
+  return { getTokenUri, create, parseLogs, listenToEvent, destroy };
 }
