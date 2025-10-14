@@ -17,7 +17,7 @@ export default function RecentMints() {
             engine: collectionData?.engine
         },
     });
-    if (data["AnchoredNFT_NFTMinted"].length === 0) {
+    if (data["Token"].length === 0) {
         return (
             <div className="border-1 border-gray-600/50 bg-white/10 rounded p-1 h-[370px] flex flex-col items-center justify-center">
                 <Meh className="text-gray-500" />
@@ -28,7 +28,7 @@ export default function RecentMints() {
     return (
         <>
             {
-                data["AnchoredNFT_NFTMinted"].map(evd => {
+                data["Token"].map(evd => {
                     const collateralInfo = pairs.data.find(pair => pair.name === evd.metadata.attributes.pair)!;
                     const collateralAmountFormatted = formatUnits(BigInt(evd.metadata.attributes.amount), collateralInfo.token1.decimals);
                     return (

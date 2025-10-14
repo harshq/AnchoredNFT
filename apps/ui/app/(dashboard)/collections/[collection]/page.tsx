@@ -60,9 +60,7 @@ export default async function Page({
 
                     </div>
                 </div>
-
-
-                <div className="h-20 " />
+                <div className="h-20" />
             </div>
         </PreloadQuery >
     );

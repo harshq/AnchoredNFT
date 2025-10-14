@@ -1,3 +1,31 @@
+# custom entities
+type Attribute {
+  id: ID!
+  engine: String!
+  pair: String!
+  collateral: String!
+  amount: String!
+}
+
+type Metadata {
+  id: ID!
+  name: String!
+  description: String!
+  image: String!
+  attributes: Attribute!
+}
+
+type Token {
+  id: ID!
+  requestId: BigInt!
+  tokenId: BigInt!
+  minter: String!
+  owner: String!
+  isDeleted: Boolean!
+  metadata: Metadata!
+}
+
+# events
 type AnchoredNFT_Approval {
   id: ID!
   owner: String!
@@ -34,28 +62,11 @@ type AnchoredNFT_NFTDestroyed {
   owner: String!
 }
 
-type Attribute {
-  id: ID!
-  engine: String!
-  pair: String!
-  collateral: String!
-  amount: String!
-}
-
-type Metadata {
-  id: ID!
-  name: String!
-  description: String!
-  image: String!
-  attributes: Attribute!
-}
-
 type AnchoredNFT_NFTMinted {
   id: ID!
   requestId: BigInt!
   tokenId: BigInt!
   minter: String!
-  metadata: Metadata!
 }
 
 type AnchoredNFT_NFTRequested {
